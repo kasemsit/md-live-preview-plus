@@ -2,6 +2,8 @@
 .vscode-test/**
 .playwright-mcp/**
 .claude/**
+.agents/**
+AGENTS.md
 .aidlc-rule-details/**
 node_modules/**
 src/**
@@ -25,6 +27,7 @@ test/**
 out-test/**
 coverage/**
 test-results/**
+work/**
 playwright-report/**
 .vscode-test.mjs
 playwright.config.ts

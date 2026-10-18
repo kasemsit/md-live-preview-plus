@@ -13,5 +13,6 @@ plans/
 out-test/
 coverage/
 test-results/
+work/
 playwright-report/
 .vscode-test/
