@@ -9,7 +9,7 @@
 
 ![Live preview rendering syntax highlighting and a Mermaid diagram in place](media/screenshots/code-and-mermaid.png)
 
-**A VS Code extension that lets you edit the Markdown preview itself, Obsidian-style.**
+**A Visual Studio Code extension that lets you edit the Markdown preview itself, Obsidian-style.**
 Your file keeps its formatted look while you type, but what's actually saved to disk is always plain Markdown.
 **Mermaid and draw.io diagrams** are drawn in place, from the text you write in a fenced code block.
 
@@ -50,8 +50,10 @@ A dedicated "Outline" view in the activity bar lists every heading (h1–h6) in 
 ### Syntax-highlighted code blocks
 Fenced code blocks (` ```python `, etc.) are colorized per-language via [Shiki](https://shiki.style/). An `auto` mode follows VS Code's color theme (light/dark), or you can pin a specific palette like GitHub's.
 
+Use a `diff` code fence to display supplied changes: `+` lines are green, `-` lines are red, and `@@` lines are blue. File headers (`+++` / `---`) are bold. This only colors the text; it does not calculate differences.
+
 ### Mermaid diagrams
-` ```mermaid ` fences render as an SVG diagram in place. Hovering the diagram reveals a toolbar: `</>` switches to the Mermaid source for editing, and the zoom controls scale a dense diagram up (drag to pan, `Ctrl`/`⌘`+wheel to zoom) with `↺` returning to the fitted view. Clicking the diagram itself pans it rather than switching to source, so a stray click can't interrupt what you're looking at.
+` ```mermaid ` fences render as an SVG diagram in place. A toolbar above the diagram provides `</>` to edit the Mermaid source and a button to expand the view. The expanded view includes zoom controls (drag to pan, `Ctrl`/`⌘`+wheel to zoom) and a reset button to return to the fitted view. Clicking the diagram itself pans it rather than switching to source, so a stray click can't interrupt what you're looking at.
 
 ### Editable tables
 A table renders as a real table and stays that way while you work in it: click a cell to edit that cell in place, `Tab`/`Shift+Tab` to move between cells, `Enter` to commit, `Esc` to discard. Only the edited cell is written back, so the rest of the row's spacing and pipes are left untouched. Dragging across cells selects their text to copy. Thin strips along the table's bottom and right edges add a row or a column. The `</>` button above the table opens the raw Markdown, for the things these can't reach — removing a row, changing the alignment row, repairing a broken table.
@@ -248,7 +250,7 @@ CodeMirror 6ベースのカスタムエディタです。見出し・強調・�
 フェンス付きコードブロック(` ```python `など)を[Shiki](https://shiki.style/)で言語ごとに色分け表示します。VS Codeのカラーテーマ(ライト/ダーク)に自動追従する`auto`モードのほか、GitHub配色などを個別に指定することもできます。
 
 #### Mermaidダイアグラム
-` ```mermaid `フェンスをその場でSVG図として描画します。図にマウスを乗せるとツールバーが出ます。`</>`でMermaid記法の編集に切り替わり、拡大・縮小ボタン(ドラッグで移動、`Ctrl`/`⌘`+ホイールで拡大縮小)で細かい図を大きく表示できます。`↺`で元の縮小表示に戻ります。図をクリックしても記法には切り替わらず移動になるので、誤ってクリックしても図が消えません。
+` ```mermaid `フェンスをその場でSVG図として描画します。図の上のツールバーには、Mermaid記法を編集する`</>`と、表示を拡大するボタンがあります。拡大表示では拡大・縮小、ドラッグでの移動、`Ctrl`/`⌘`+ホイールでの拡大縮小ができます。リセットボタンで元の縮小表示に戻ります。図をクリックしても記法には切り替わらず移動になるので、誤ってクリックしても図が消えません。
 
 #### 編集できるテーブル
 テーブルは表として描画され、作業中もその見た目のままです。セルをクリックするとそのセルだけをその場で編集でき、`Tab`/`Shift+Tab`でセル間を移動、`Enter`で確定、`Esc`で取り消します。書き戻すのは編集したセルだけなので、行のほかの文字や`|`の位置はそのまま保たれます。セルをなぞれば文字を選択してコピーできます。表の下端と右端にある細いバーで、行や列を追加できます。行の削除や列揃えの変更など、これらで届かない部分は、表の上の`</>`ボタンから元のMarkdownを開いて編集します。

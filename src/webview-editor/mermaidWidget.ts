@@ -2,6 +2,7 @@ import { EditorView, WidgetType } from '@codemirror/view';
 import { wrapBlockWidget } from './blockWidgetWrap';
 import { loadMermaidModule, type MermaidApi } from './mermaidLoader';
 import { createCodeModeButton } from './codeModeButton';
+import { setControlIcon, type ControlIcon } from './controlIcons';
 import { setBlockRevealed } from './cmUtils';
 import { t } from '../shared/i18n';
 
@@ -113,12 +114,13 @@ export class MermaidWidget extends WidgetType {
 		// ── Toolbar: mode toggle always shown; zoom controls only in native mode ──
 		const toolbar = document.createElement('div');
 		toolbar.className = 'mlp-mermaid-toolbar';
-		const makeButton = (label: string, title: string, onClick: () => void): HTMLButtonElement => {
+		const makeButton = (icon: ControlIcon, title: string, onClick: () => void): HTMLButtonElement => {
 			const btn = document.createElement('button');
 			btn.type = 'button';
 			btn.className = 'mlp-mermaid-btn';
-			btn.textContent = label;
+			setControlIcon(btn, icon);
 			btn.title = title;
+			btn.setAttribute('aria-label', title);
 			// Stop the container's pan/click handlers from also firing.
 			btn.addEventListener('pointerdown', (e) => e.stopPropagation());
 			btn.addEventListener('click', (e) => {
@@ -129,16 +131,16 @@ export class MermaidWidget extends WidgetType {
 			return btn;
 		};
 
-		const zoomInBtn = makeButton('+', t('zoom.in'), () => zoomCenter(1.2));
-		const zoomOutBtn = makeButton('−', t('zoom.out'), () => zoomCenter(1 / 1.2));
+		const zoomInBtn = makeButton('plus', t('zoom.in'), () => zoomCenter(1.2));
+		const zoomOutBtn = makeButton('minus', t('zoom.out'), () => zoomCenter(1 / 1.2));
 		// Resets all the way out to "fit", not just to scale 1. `resetPanZoom`
 		// alone leaves the diagram in native mode, where scale 1 means *full size*
 		// — so from a zoomed-in view the button appeared to only half-work: the
 		// diagram shrank a little and stopped, still larger than the view it
 		// started from. What "back to the original size" means to someone looking
 		// at the diagram is the fitted view they began with.
-		const zoomResetBtn = makeButton('↺', t('zoom.reset'), () => setMode('fit'));
-		const modeToggleBtn = makeButton('', '', () => setMode(mode === 'fit' ? 'native' : 'fit'));
+		const zoomResetBtn = makeButton('reset', t('zoom.reset'), () => setMode('fit'));
+		const modeToggleBtn = makeButton('expand', '', () => setMode(mode === 'fit' ? 'native' : 'fit'));
 		// Same control every rendered "図" block carries, so the way back to the
 		// source is in the same place whatever the block is. Clicking the
 		// rendered diagram itself never does this — see `endDrag` below — so
@@ -148,7 +150,7 @@ export class MermaidWidget extends WidgetType {
 			onReveal: () => setBlockRevealed(this.blockFrom, true),
 		});
 		toolbar.append(codeModeBtn, modeToggleBtn, zoomInBtn, zoomOutBtn, zoomResetBtn);
-		wrap.appendChild(toolbar);
+		wrap.insertBefore(toolbar, container);
 
 		function setMode(next: DisplayMode): void {
 			mode = next;
@@ -156,8 +158,9 @@ export class MermaidWidget extends WidgetType {
 			zoomInBtn.style.display = mode === 'native' ? '' : 'none';
 			zoomOutBtn.style.display = mode === 'native' ? '' : 'none';
 			zoomResetBtn.style.display = mode === 'native' ? '' : 'none';
-			modeToggleBtn.textContent = mode === 'fit' ? '⤢' : '⤡';
+			setControlIcon(modeToggleBtn, mode === 'fit' ? 'expand' : 'collapse');
 			modeToggleBtn.title = mode === 'fit' ? t('zoom.toActual') : t('zoom.toFit');
+			modeToggleBtn.setAttribute('aria-label', modeToggleBtn.title);
 			if (mode === 'native') resetPanZoom();
 			else applyTransform();
 			// The two modes have different heights ('native' adds a horizontal

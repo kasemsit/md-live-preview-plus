@@ -1,0 +1,98 @@
+/* Liquid Notes material study supplied by the user. Recreated for the
+   extension's existing controls; no external fonts, images or scripts. */
+:root, body {
+	--mlp-ui-block-radius: 6px;
+	--mlp-ui-ink: var(--vscode-editorWidget-foreground, var(--vscode-foreground, var(--vscode-editor-foreground, CanvasText)));
+	--mlp-ui-soft: var(--vscode-descriptionForeground, var(--mlp-ui-ink));
+	--mlp-ui-control-ink: var(--vscode-icon-foreground, var(--mlp-ui-ink));
+	--mlp-ui-accent: var(--vscode-focusBorder, Highlight);
+	--mlp-ui-active-ink: var(--vscode-list-inactiveSelectionForeground, var(--mlp-ui-ink));
+	--mlp-ui-edge: var(--vscode-editorWidget-border, var(--vscode-panel-border, color-mix(in srgb, var(--mlp-ui-ink) 20%, transparent)));
+	--mlp-ui-light: var(--mlp-ui-ink);
+	--mlp-ui-rim: color-mix(in srgb, var(--mlp-ui-light) 48%, var(--mlp-ui-edge));
+	--mlp-ui-side-rim: color-mix(in srgb, var(--mlp-ui-light) 24%, var(--mlp-ui-edge));
+	--mlp-ui-reflection: color-mix(in srgb, var(--mlp-ui-light) 15%, transparent);
+	--mlp-ui-glint: color-mix(in srgb, var(--mlp-ui-light) 7%, transparent);
+	--mlp-ui-base: var(--vscode-editorWidget-background, var(--vscode-editor-background, Canvas));
+	/* Keep the middle clear; light collects at the curved perimeter. */
+	--mlp-ui-glass: radial-gradient(ellipse at 0% 0%, var(--mlp-ui-reflection), transparent 58%), linear-gradient(145deg, var(--mlp-ui-reflection), transparent 32%, transparent 68%, var(--mlp-ui-glint)), color-mix(in srgb, var(--mlp-ui-base) 58%, transparent);
+	--mlp-ui-shadow-color: var(--vscode-widget-shadow, color-mix(in srgb, var(--vscode-editor-background, Canvas) 35%, transparent));
+	--mlp-ui-control-shadow: inset 0 1px 0 var(--mlp-ui-reflection), inset 0 -1px 0 var(--mlp-ui-glint), inset 0 0 0 1px var(--mlp-ui-glint);
+	--mlp-ui-shadow: 0 10px 28px var(--mlp-ui-shadow-color), 0 2px 5px var(--mlp-ui-shadow-color), var(--mlp-ui-control-shadow);
+	--mlp-ui-blur: blur(12px) saturate(1.35);
+	--mlp-ui-hover: var(--vscode-toolbar-hoverBackground, color-mix(in srgb, var(--mlp-ui-ink) 9%, transparent));
+	--mlp-ui-selected: var(--vscode-list-inactiveSelectionBackground, color-mix(in srgb, var(--mlp-ui-accent) 17%, transparent));
+	--mlp-ui-input: color-mix(in srgb, var(--vscode-input-background, var(--mlp-ui-base)) 32%, transparent);
+	--mlp-ui-input-shine: color-mix(in srgb, var(--mlp-ui-light) 10%, transparent);
+	--mlp-ui-input-rim: color-mix(in srgb, var(--mlp-ui-light) 22%, transparent);
+	--mlp-ui-input-glass: linear-gradient(155deg, var(--mlp-ui-input-shine), transparent 35%, transparent 70%, var(--mlp-ui-glint)), var(--mlp-ui-input);
+	--mlp-ui-input-shadow: inset 0 1px 0 var(--mlp-ui-input-rim), inset 0 -1px 0 var(--mlp-ui-glint), inset 0 0 0 1px var(--mlp-ui-glint);
+	--mlp-ui-line: color-mix(in srgb, var(--mlp-ui-ink) 12%, transparent);
+}
+
+/* Light themes reflect their canvas, rather than adding dark highlights. */
+body.vscode-light {
+	--mlp-ui-light: var(--vscode-editor-background, Canvas);
+}
+
+/* Sidebar surfaces share the floating editor controls' material. Each view
+   keeps its own layout and existing DOM. */
+.mlp-outline-list,
+.mlp-settings,
+.mlp-card {
+	background: var(--mlp-ui-glass);
+	border: 1px solid var(--mlp-ui-edge);
+	border-top-color: var(--mlp-ui-rim);
+	border-left-color: var(--mlp-ui-side-rim);
+	border-radius: 14px;
+	box-shadow: var(--mlp-ui-shadow);
+	backdrop-filter: var(--mlp-ui-blur);
+	-webkit-backdrop-filter: var(--mlp-ui-blur);
+}
+
+/* Use an opaque face when background blur is unavailable. */
+@supports not (backdrop-filter: blur(1px)) {
+	:root, body { --mlp-ui-glass: var(--mlp-ui-base); }
+}
+
+/* Respect the host's high contrast themes, including light high contrast. */
+body.vscode-high-contrast,
+body.vscode-high-contrast-light {
+	--mlp-ui-accent: var(--vscode-focusBorder, Highlight);
+	--mlp-ui-edge: var(--vscode-contrastBorder, var(--mlp-ui-ink));
+	--mlp-ui-rim: var(--mlp-ui-edge);
+	--mlp-ui-side-rim: var(--mlp-ui-edge);
+	--mlp-ui-reflection: transparent;
+	--mlp-ui-glint: transparent;
+	--mlp-ui-glass: var(--mlp-ui-base);
+	--mlp-ui-input: var(--vscode-input-background, var(--mlp-ui-base));
+	--mlp-ui-input-glass: var(--mlp-ui-input);
+	--mlp-ui-input-shadow: none;
+	--mlp-ui-selected: var(--vscode-list-activeSelectionBackground, Highlight);
+	--mlp-ui-active-ink: var(--vscode-list-activeSelectionForeground, var(--mlp-ui-ink));
+	--mlp-ui-shadow: none;
+	--mlp-ui-control-shadow: none;
+	--mlp-ui-blur: none;
+}
+
+@media (forced-colors: active) {
+	:root, body[class] {
+		--mlp-ui-ink: CanvasText;
+		--mlp-ui-soft: CanvasText;
+		--mlp-ui-control-ink: ButtonText;
+		--mlp-ui-accent: LinkText;
+		--mlp-ui-edge: CanvasText;
+		--mlp-ui-rim: CanvasText;
+		--mlp-ui-side-rim: CanvasText;
+		--mlp-ui-reflection: transparent;
+		--mlp-ui-glint: transparent;
+		--mlp-ui-base: Canvas;
+		--mlp-ui-glass: Canvas;
+		--mlp-ui-input: Canvas;
+		--mlp-ui-input-glass: Canvas;
+		--mlp-ui-input-shadow: none;
+		--mlp-ui-shadow: none;
+		--mlp-ui-control-shadow: none;
+		--mlp-ui-blur: none;
+	}
+}

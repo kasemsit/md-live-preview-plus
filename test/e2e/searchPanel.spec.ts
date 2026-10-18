@@ -3,6 +3,33 @@ import { mountEditor, openSearch } from './harness';
 
 const DOC = '# Heading\n\nSome text with a needle in it.\n\n![alt](assets/pic.png)\n';
 
+for (const locale of ['en', 'ja']) {
+	for (const width of [1000, 360]) {
+		test(`find controls stay on one line in ${locale} at ${width}px`, async ({ page }) => {
+			await page.setViewportSize({ width, height: 700 });
+			await mountEditor(page, DOC, locale);
+			await openSearch(page);
+			const row = page.locator('.mlp-search-row-find');
+			const panel = (await page.locator('.cm-search').boundingBox())!;
+			const field = (await row.locator('input[name="search"]').boundingBox())!;
+			expect(field.width).toBeGreaterThanOrEqual(48);
+			for (const control of await row.locator(':scope > input, :scope > button, :scope > label').all()) {
+				const box = (await control.boundingBox())!;
+				expect(Math.abs(box.y + box.height / 2 - field.y - field.height / 2)).toBeLessThan(2);
+				expect(box.x).toBeGreaterThanOrEqual(panel.x);
+				expect(box.x + box.width).toBeLessThanOrEqual(panel.x + panel.width);
+			}
+			await page.locator('.cm-search input[name="search"]').fill('needle');
+			await expect(row.locator('button[name="next"]')).toHaveAccessibleName(locale === 'ja' ? '次へ' : 'next');
+			await expect(row.locator('button[name="prev"]')).toHaveAttribute('title', locale === 'ja' ? '前へ' : 'previous');
+			await row.locator('button[name="next"]').click();
+			await expect(page.locator('.cm-selectionBackground')).not.toHaveCount(0);
+			await expect(page.locator('.cm-search input[name="replace"]')).toBeHidden();
+			if (locale === 'ja') await page.screenshot({ path: `test-results/search-single-line-${width}.png` });
+		});
+	}
+}
+
 test.describe('find panel', () => {
 	test.beforeEach(async ({ page }) => {
 		await mountEditor(page, DOC);

@@ -79,13 +79,19 @@ export class FrontmatterWidget extends WidgetType {
 			tbody.appendChild(tr);
 		}
 		table.appendChild(tbody);
+		const details = document.createElement('details');
+		details.className = 'mlp-frontmatter-details';
+		const summary = document.createElement('summary');
+		summary.textContent = t('frontmatter.summary');
+		details.append(summary, table);
+		details.addEventListener('toggle', () => view.requestMeasure());
 		// The `</>` button is the only way in — a "図" block, so nothing about a
 		// plain click on it should move the caret or change what's shown (see
 		// `isBlockRevealed` in cmUtils.ts). `ignoreEvent` below leaves such a click
 		// with nothing to do, the same as clicking a Mermaid diagram.
 		return wrapBlockWidget(
-			withCodeModeButton(view, table, {
-				anchor: table,
+			withCodeModeButton(view, details, {
+				anchor: details,
 				onReveal: () => setBlockRevealed(this.blockFrom, true),
 			}),
 		);

@@ -47,6 +47,9 @@ const webviewEditorConfig = {
 	target: 'es2022',
 	sourcemap: !production,
 	minify: production,
+	// gfmTableFix identifies Lezer's default SetextHeadingParser by name.
+	// Keep runtime names in release bundles as well as development bundles.
+	keepNames: true,
 	logLevel: 'silent',
 	plugins: [esbuildProblemMatcherPlugin],
 };

@@ -1,6 +1,7 @@
 import { EditorView, WidgetType } from '@codemirror/view';
 import { wrapBlockWidget } from './blockWidgetWrap';
 import { createCodeModeButton } from './codeModeButton';
+import { setControlIcon, type ControlIcon } from './controlIcons';
 import { setBlockRevealed } from './cmUtils';
 import {
 	renderParsedDiagram,
@@ -92,12 +93,13 @@ export class DrawioWidget extends WidgetType {
 
 		const toolbar = document.createElement('div');
 		toolbar.className = 'mlp-mermaid-toolbar';
-		const makeButton = (label: string, title: string, onClick: () => void): HTMLButtonElement => {
+		const makeButton = (icon: ControlIcon, title: string, onClick: () => void): HTMLButtonElement => {
 			const btn = document.createElement('button');
 			btn.type = 'button';
 			btn.className = 'mlp-mermaid-btn';
-			btn.textContent = label;
+			setControlIcon(btn, icon);
 			btn.title = title;
+			btn.setAttribute('aria-label', title);
 			btn.addEventListener('pointerdown', (e) => e.stopPropagation());
 			btn.addEventListener('click', (e) => {
 				e.preventDefault();
@@ -107,10 +109,10 @@ export class DrawioWidget extends WidgetType {
 			return btn;
 		};
 
-		const zoomInBtn = makeButton('+', t('zoom.in'), () => zoomCenter(1.2));
-		const zoomOutBtn = makeButton('−', t('zoom.out'), () => zoomCenter(1 / 1.2));
-		const zoomResetBtn = makeButton('↺', t('zoom.reset'), () => setMode('fit'));
-		const modeToggleBtn = makeButton('', '', () => setMode(mode === 'fit' ? 'native' : 'fit'));
+		const zoomInBtn = makeButton('plus', t('zoom.in'), () => zoomCenter(1.2));
+		const zoomOutBtn = makeButton('minus', t('zoom.out'), () => zoomCenter(1 / 1.2));
+		const zoomResetBtn = makeButton('reset', t('zoom.reset'), () => setMode('fit'));
+		const modeToggleBtn = makeButton('expand', '', () => setMode(mode === 'fit' ? 'native' : 'fit'));
 		const codeModeBtn = createCodeModeButton(view, {
 			anchor: wrap,
 			onReveal: () => setBlockRevealed(this.blockFrom, true),
@@ -122,11 +124,11 @@ export class DrawioWidget extends WidgetType {
 		let pageIndex = 0;
 		const pageLabel = document.createElement('span');
 		pageLabel.className = 'mlp-drawio-page-label';
-		const prevPageBtn = makeButton('‹', t('page.prev'), () => showPage(pageIndex - 1));
-		const nextPageBtn = makeButton('›', t('page.next'), () => showPage(pageIndex + 1));
+		const prevPageBtn = makeButton('previous', t('page.prev'), () => showPage(pageIndex - 1));
+		const nextPageBtn = makeButton('next', t('page.next'), () => showPage(pageIndex + 1));
 
 		toolbar.append(codeModeBtn, prevPageBtn, pageLabel, nextPageBtn, modeToggleBtn, zoomInBtn, zoomOutBtn, zoomResetBtn);
-		wrap.appendChild(toolbar);
+		wrap.insertBefore(toolbar, container);
 
 		const showError = (message: string) => {
 			canvas.textContent = message;
@@ -167,8 +169,9 @@ export class DrawioWidget extends WidgetType {
 			zoomInBtn.style.display = mode === 'native' ? '' : 'none';
 			zoomOutBtn.style.display = mode === 'native' ? '' : 'none';
 			zoomResetBtn.style.display = mode === 'native' ? '' : 'none';
-			modeToggleBtn.textContent = mode === 'fit' ? '⤢' : '⤡';
+			setControlIcon(modeToggleBtn, mode === 'fit' ? 'expand' : 'collapse');
 			modeToggleBtn.title = mode === 'fit' ? t('zoom.toActual') : t('zoom.toFit');
+			modeToggleBtn.setAttribute('aria-label', modeToggleBtn.title);
 			if (mode === 'native') resetPanZoom();
 			else applyTransform();
 			view.requestMeasure();

@@ -1,6 +1,6 @@
 body {
 	margin: 0;
-	padding: 8px;
+	padding: 10px;
 	font-family: var(--vscode-font-family, sans-serif);
 	font-size: var(--vscode-font-size, 13px);
 	color: var(--vscode-foreground);
@@ -32,30 +32,27 @@ body {
 .mlp-card-list {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 10px;
 }
 
 .mlp-card {
-	border: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.3));
-	border-radius: 6px;
 	overflow: hidden;
 	cursor: pointer;
-	background: var(--vscode-editorWidget-background, transparent);
 	transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .mlp-card:hover {
-	border-color: var(--vscode-focusBorder, #007fd4);
+	border-color: var(--mlp-ui-accent);
 }
 .mlp-card-selected {
-	border-color: var(--vscode-focusBorder, #007fd4);
-	box-shadow: 0 0 0 1px var(--vscode-focusBorder, #007fd4);
+	border-color: var(--mlp-ui-accent);
+	box-shadow: 0 0 0 1px var(--mlp-ui-selected), inset 0 1px 0 var(--mlp-ui-reflection);
 }
 
 .mlp-card-head {
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	padding: 6px 8px;
+	padding: 8px;
 }
 
 .mlp-radio {
@@ -67,9 +64,9 @@ body {
 	box-sizing: border-box;
 }
 .mlp-card-selected .mlp-radio {
-	border-color: var(--vscode-focusBorder, #007fd4);
+	border-color: var(--mlp-ui-accent);
 	background:
-		radial-gradient(circle, var(--vscode-focusBorder, #007fd4) 0 4px, transparent 5px);
+		radial-gradient(circle, var(--mlp-ui-accent) 0 4px, transparent 5px);
 }
 
 .mlp-name {
@@ -86,8 +83,8 @@ body {
 	font-weight: 700;
 	padding: 1px 6px;
 	border-radius: 999px;
-	color: var(--vscode-badge-foreground, #fff);
-	background: var(--vscode-badge-background, #007fd4);
+	color: var(--vscode-badge-foreground, var(--mlp-ui-ink));
+	background: var(--vscode-badge-background, var(--mlp-ui-selected));
 }
 
 /* Action buttons: hidden until the card is hovered, to keep the row clean. */
@@ -110,7 +107,7 @@ body {
 	height: 22px;
 	padding: 0;
 	border: none;
-	border-radius: 4px;
+	border-radius: 6px;
 	background: transparent;
 	color: var(--vscode-icon-foreground, var(--vscode-foreground));
 	opacity: 0.75;
@@ -118,7 +115,12 @@ body {
 }
 .mlp-action:hover {
 	opacity: 1;
-	background: var(--vscode-toolbar-hoverBackground, rgba(127, 127, 127, 0.2));
+	background: var(--mlp-ui-hover);
+}
+.mlp-action:focus-visible,
+.mlp-new-style:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder, #007fd4);
+	outline-offset: -1px;
 }
 .mlp-action[aria-label="削除"]:hover {
 	color: var(--vscode-errorForeground, #f14c4c);
@@ -128,7 +130,7 @@ body {
 .mlp-preview {
 	height: 160px;
 	overflow: hidden;
-	border-top: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.25));
+	border-top: 1px solid var(--mlp-ui-line);
 	/* The card owns the click; the preview is purely illustrative. */
 	pointer-events: none;
 	position: relative;
@@ -141,16 +143,16 @@ body {
 .mlp-new-style {
 	margin-top: 10px;
 	width: 100%;
-	padding: 5px 8px;
-	background: var(--vscode-button-background);
-	color: var(--vscode-button-foreground);
-	border: none;
-	border-radius: 3px;
+	padding: 8px;
+	background: var(--vscode-button-background, var(--mlp-ui-selected));
+	color: var(--vscode-button-foreground, var(--mlp-ui-ink));
+	border: 1px solid var(--mlp-ui-edge);
+	border-radius: 9px;
 	cursor: pointer;
 	font-size: 1em;
 }
 .mlp-new-style:hover {
-	background: var(--vscode-button-hoverBackground);
+	background: var(--vscode-button-hoverBackground, var(--mlp-ui-hover));
 }
 
 /* ── Section separator ───────────────────────────────────────────────────
@@ -168,20 +170,30 @@ body {
 	gap: 3px;
 	margin-bottom: 10px;
 }
+.mlp-settings {
+	padding: 10px;
+}
+.mlp-settings .mlp-field:last-child {
+	margin-bottom: 0;
+}
 .mlp-field-label {
 	font-size: 0.9em;
 	opacity: 0.85;
 }
 .mlp-select {
 	width: 100%;
-	padding: 3px 4px;
+	padding: 7px 8px;
 	color: var(--vscode-dropdown-foreground, var(--vscode-foreground));
-	background: var(--vscode-dropdown-background, var(--vscode-input-background, #333));
-	border: 1px solid var(--vscode-dropdown-border, var(--vscode-panel-border, rgba(127, 127, 127, 0.4)));
-	border-radius: 3px;
+	background: var(--mlp-ui-input);
+	border: 1px solid var(--vscode-dropdown-border, var(--mlp-ui-line));
+	border-radius: 8px;
 	cursor: pointer;
 }
 .mlp-select:focus {
 	outline: 1px solid var(--vscode-focusBorder, #007fd4);
 	outline-offset: -1px;
+}
+.mlp-select option {
+	color: var(--vscode-dropdown-foreground, var(--vscode-foreground));
+	background: var(--vscode-dropdown-background, var(--vscode-editor-background));
 }

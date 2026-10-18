@@ -89,6 +89,9 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 		const scriptUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview-editor.js'),
 		);
+		const uiStyleUri = webview.asWebviewUri(
+			vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview-ui.css'),
+		);
 		const styleUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview-editor-theme.css'),
 		);
@@ -112,6 +115,7 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 <head>
 	<meta charset="UTF-8" />
 	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};" />
+	<link rel="stylesheet" href="${uiStyleUri}" />
 	<link rel="stylesheet" href="${styleUri}" />
 	<title>Markdown Live Preview</title>
 </head>

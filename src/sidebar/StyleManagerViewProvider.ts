@@ -142,6 +142,9 @@ export class StyleManagerViewProvider implements vscode.WebviewViewProvider {
 		const scriptUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview-sidebar.js'),
 		);
+		const uiStyleUri = webview.asWebviewUri(
+			vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview-ui.css'),
+		);
 		const styleUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview-sidebar-style.css'),
 		);
@@ -152,6 +155,7 @@ export class StyleManagerViewProvider implements vscode.WebviewViewProvider {
 <head>
 	<meta charset="UTF-8" />
 	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';" />
+	<link rel="stylesheet" href="${uiStyleUri}" />
 	<link rel="stylesheet" href="${styleUri}" />
 	<title>CSS Themes</title>
 </head>

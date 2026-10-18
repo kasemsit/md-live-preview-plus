@@ -38,9 +38,10 @@ const ROOT = join(__dirname, '..', '..');
  * dark set is supplied so colors resolve to something assertable rather than to
  * the fallbacks.
  */
-export async function mountEditor(page: Page, text: string): Promise<void> {
+export async function mountEditor(page: Page, text: string, locale = 'en'): Promise<void> {
 	const script = readFileSync(join(ROOT, 'dist', 'webview-editor.js'), 'utf8');
 	const style = readFileSync(join(ROOT, 'media', 'webview-editor-theme.css'), 'utf8');
+	const uiStyle = readFileSync(join(ROOT, 'media', 'webview-ui.css'), 'utf8');
 
 	// The Mermaid bundle is fetched lazily by URI, and the AWS shape table by
 	// `fetch`. Serving both from the page's own origin lets the diagram widgets
@@ -81,12 +82,14 @@ export async function mountEditor(page: Page, text: string): Promise<void> {
 }
 html, body { margin: 0; height: 100%; background: var(--vscode-editor-background); }
 #mlp-root { height: 100%; }
+${uiStyle}
 ${style}
 </style>
 </head>
 <body>
 <div id="mlp-root"></div>
-<script>${HOST_STUB}</script>
+<script>${HOST_STUB}
+window.mlpLocale = ${JSON.stringify(locale)};</script>
 <script>${script.replace(/<\/script>/gi, '<\/script>')}</script>
 </body>
 </html>`);

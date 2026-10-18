@@ -1,6 +1,6 @@
 body {
 	margin: 0;
-	padding: 8px;
+	padding: 10px;
 	font-family: var(--vscode-font-family, sans-serif);
 	font-size: var(--vscode-font-size, 13px);
 	color: var(--vscode-foreground);
@@ -15,12 +15,12 @@ body {
 .mlp-outline-list {
 	list-style: none;
 	margin: 0;
-	padding: 0;
+	padding: 6px;
 }
 
 .mlp-outline-item {
-	padding: 2px 6px;
-	border-radius: 3px;
+	padding: 7px 6px;
+	border-radius: 8px;
 	cursor: pointer;
 	white-space: nowrap;
 	overflow: hidden;
@@ -29,8 +29,12 @@ body {
 
 .mlp-outline-item:hover,
 .mlp-outline-item:focus {
-	background: var(--vscode-list-hoverBackground);
-	outline: none;
+	background: var(--vscode-list-hoverBackground, var(--mlp-ui-hover));
+	color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+}
+.mlp-outline-item:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder, #007fd4);
+	outline-offset: -1px;
 }
 
 .mlp-outline-level-1 { padding-left: 6px; font-weight: 600; }

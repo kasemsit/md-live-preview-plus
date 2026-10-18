@@ -1,6 +1,7 @@
 import type { EditorView } from '@codemirror/view';
 import { blockRevealChanged } from './cmUtils';
 import { t } from '../shared/i18n';
+import { setControlIcon } from './controlIcons';
 
 /**
  * The "show me the source" control shared by every rendered "図" block
@@ -40,10 +41,7 @@ export function createCodeModeButton(view: EditorView, options: CodeModeButtonOp
 	const button = document.createElement('button');
 	button.type = 'button';
 	button.className = 'mlp-code-mode-btn';
-	// Icon only: the glyph is set in the editor's monospace face by the stylesheet
-	// so it reads as code, and what it does is spelled out for pointer users in
-	// `title` and for assistive tech in `aria-label`.
-	button.textContent = '</>';
+	setControlIcon(button, 'code');
 	button.title = t('code.toggle.title');
 	button.setAttribute('aria-label', t('code.toggle.aria'));
 
@@ -71,13 +69,6 @@ export function createCodeModeButton(view: EditorView, options: CodeModeButtonOp
 	return button;
 }
 
-// A squared-plus reads as a simple grid, the same idea as `▦` (crosshatch
-// fill) without that glyph's problem: most monospace fonts draw its ink
-// noticeably above center within its own em box, which put it visibly off
-// vertical-center inside the button next to the `</>` control's own glyph,
-// centered normally. `⊞` sits centered the same way `</>` does.
-const RENDER_MODE_GLYPH = '⊞';
-
 /**
  * Builds the "▦" button that switches a "図" block's raw Markdown view back
  * to its rendered form.
@@ -92,7 +83,7 @@ export function createRenderModeButton(onClick: () => void): HTMLButtonElement {
 	const button = document.createElement('button');
 	button.type = 'button';
 	button.className = 'mlp-render-mode-btn';
-	button.textContent = RENDER_MODE_GLYPH;
+	setControlIcon(button, 'render');
 	button.title = t('render.toggle.title');
 	button.setAttribute('aria-label', t('render.toggle.aria'));
 	// Same reasoning as the `</>` button's own mousedown handler: the press must
@@ -139,16 +130,17 @@ export function withCodeModeButton(
  * `getCode` is read at click time, not at build time, so the button copies what
  * the block says now rather than what it said when the button was created.
  */
-/** Two overlapping sheets — the usual "copy" mark, and a glyph, not an icon font. */
-const COPY_GLYPH = '⧉';
+/** Original overlapping-sheet icon, centered independently of font metrics. */
+function showCopyIcon(button: HTMLButtonElement): void {
+	setControlIcon(button, 'copy');
+}
 
 export function createCopyCodeButton(getCode: () => string): HTMLButtonElement {
 	const button = document.createElement('button');
 	button.type = 'button';
-	// Same shape and treatment as the `</>` control, so the two read as one family
-	// of block chrome: a short glyph in the editor's monospace face, not a word.
+	// Same centered vector treatment as the source control.
 	button.className = 'mlp-copy-code-btn';
-	button.textContent = COPY_GLYPH;
+	showCopyIcon(button);
 	button.title = t('code.copy.title');
 	button.setAttribute('aria-label', t('code.copy.aria'));
 
@@ -169,7 +161,7 @@ export function createCopyCodeButton(getCode: () => string): HTMLButtonElement {
 			button.classList.toggle('mlp-copy-code-btn-done', ok);
 			button.classList.toggle('mlp-copy-code-btn-failed', !ok);
 			setTimeout(() => {
-				button.textContent = COPY_GLYPH;
+				showCopyIcon(button);
 				button.classList.remove('mlp-copy-code-btn-done', 'mlp-copy-code-btn-failed');
 			}, 1200);
 		};

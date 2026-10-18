@@ -11,12 +11,12 @@ test.describe('diagram widgets', () => {
 		await mountEditor(page, 'Intro\n\n```mermaid\ngraph TD;\n  A-->B;\n```\n\nAfter\n');
 		// Mermaid is loaded lazily and lays out asynchronously, so the assertion
 		// waits rather than sampling once.
-		await expect(page.locator('.mlp-mermaid-wrap svg')).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator('.mlp-mermaid-canvas > svg')).toBeVisible({ timeout: 20_000 });
 	});
 
 	test('putting the caret in a mermaid fence shows its source', async ({ page }) => {
 		await mountEditor(page, 'Intro\n\n```mermaid\ngraph TD;\n  A-->B;\n```\n\nAfter\n');
-		await expect(page.locator('.mlp-mermaid-wrap svg')).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator('.mlp-mermaid-canvas > svg')).toBeVisible({ timeout: 20_000 });
 		// The rendered widget replaces the fence, so the caret is put on the line
 		// through the code-mode button the widget itself offers.
 		await page.locator('.mlp-mermaid-wrap').hover();
@@ -42,7 +42,7 @@ test.describe('diagram widgets', () => {
 			'</root></mxGraphModel>',
 		].join('');
 		await mountEditor(page, `Intro\n\n\`\`\`drawio\n${xml}\n\`\`\`\n\nAfter\n`);
-		await expect(page.locator('.mlp-drawio-wrap svg')).toBeVisible({ timeout: 15_000 });
+		await expect(page.locator('.mlp-drawio-wrap .mlp-mermaid-canvas > svg')).toBeVisible({ timeout: 15_000 });
 	});
 
 	test('a drawio file reference asks the host to read it', async ({ page }) => {
@@ -78,12 +78,12 @@ test.describe('diagram widgets', () => {
 		// The caret starts at position 0 — right on the fence's own opening line,
 		// the exact accidental-reveal case this is meant to rule out.
 		await mountEditor(page, '```mermaid\ngraph TD;\n  A-->B;\n```\n\nAfter\n');
-		await expect(page.locator('.mlp-mermaid-wrap svg')).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator('.mlp-mermaid-canvas > svg')).toBeVisible({ timeout: 20_000 });
 	});
 
 	test('the render button returns a revealed diagram to its rendered form', async ({ page }) => {
 		await mountEditor(page, 'Intro\n\n```mermaid\ngraph TD;\n  A-->B;\n```\n\nAfter\n');
-		await expect(page.locator('.mlp-mermaid-wrap svg')).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator('.mlp-mermaid-canvas > svg')).toBeVisible({ timeout: 20_000 });
 
 		await page.locator('.mlp-code-mode-btn').first().click();
 		await expect(page.locator('.mlp-mermaid-wrap')).toHaveCount(0);
@@ -96,7 +96,7 @@ test.describe('diagram widgets', () => {
 		await expect(page.locator('.mlp-render-mode-btn')).toHaveCount(1);
 
 		await page.locator('.mlp-render-mode-btn').click();
-		await expect(page.locator('.mlp-mermaid-wrap svg')).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator('.mlp-mermaid-canvas > svg')).toBeVisible({ timeout: 20_000 });
 	});
 });
 

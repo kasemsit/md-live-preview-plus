@@ -8,6 +8,19 @@ import { mountEditor } from './harness';
  * cmUtils.ts.
  */
 test.describe('frontmatter', () => {
+	test('document information starts compact and expands without revealing source', async ({ page }) => {
+		await mountEditor(page, '---\ntitle: Hello\n---\n\nBody text.\n');
+		await expect(page.locator('.mlp-frontmatter')).toBeHidden();
+		await page.locator('.mlp-frontmatter-details summary').click();
+		await expect(page.locator('.mlp-frontmatter')).toBeVisible();
+		await expect(page.locator('.mlp-frontmatter')).toContainText('Hello');
+		await page.locator('.mlp-frontmatter-details summary').click();
+		await expect(page.locator('.mlp-frontmatter')).toBeHidden();
+		await page.locator('.cm-line', { hasText: 'Body text.' }).click();
+		await page.keyboard.press('End');
+		await page.keyboard.type(' edited');
+		await expect(page.locator('.cm-line', { hasText: 'Body text. edited' })).toBeVisible();
+	});
 	test('renders a key/value view for valid YAML', async ({ page }) => {
 		await mountEditor(page, '---\ntitle: Hello\n---\n\nBody text.\n');
 		await expect(page.locator('.mlp-frontmatter')).toHaveCount(1);

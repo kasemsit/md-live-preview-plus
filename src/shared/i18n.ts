@@ -38,6 +38,7 @@ const en = {
 	'drawio.noConnection': 'The connection to the host is not established yet.',
 
 	'frontmatter.parseFailed': 'Could not parse the front matter',
+	'frontmatter.summary': 'Document information',
 
 	'table.addRow': 'Add a row',
 	'table.addColumn': 'Add a column',
@@ -148,6 +149,7 @@ const ja: Record<MessageKey, string> = {
 	'drawio.noConnection': 'ホストへの接続がまだ確立していません。',
 
 	'frontmatter.parseFailed': 'フロントマターの解析に失敗しました',
+	'frontmatter.summary': '文書情報',
 
 	'table.addRow': '行を追加',
 	'table.addColumn': '列を追加',

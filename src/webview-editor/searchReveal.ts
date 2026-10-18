@@ -262,6 +262,17 @@ function iconifyToggles(panel: HTMLElement): void {
 
 
 function decorateSearchPanel(view: EditorView, panel: HTMLElement): void {
+	// Short arrows keep navigation on the find line. Preserve the translated
+	// names for screen readers and tooltips rather than replacing their meaning.
+	for (const name of ['next', 'prev']) {
+		const button = panel.querySelector<HTMLButtonElement>(`button[name="${name}"]`);
+		if (!button || button.classList.contains('mlp-search-navigation')) continue;
+		const label = button.textContent?.trim() ?? '';
+		button.title = label;
+		button.setAttribute('aria-label', label);
+		button.textContent = name === 'next' ? '↓' : '↑';
+		button.classList.add('mlp-search-navigation');
+	}
 	iconifyToggles(panel);
 	groupSearchRows(panel);
 	if (panel.querySelector('.mlp-search-toggle')) return;

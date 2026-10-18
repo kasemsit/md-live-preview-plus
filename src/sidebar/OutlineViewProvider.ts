@@ -67,6 +67,9 @@ export class OutlineViewProvider implements vscode.WebviewViewProvider {
 
 	private buildHtml(webview: vscode.Webview): string {
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview-outline.js'));
+		const uiStyleUri = webview.asWebviewUri(
+			vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview-ui.css'),
+		);
 		const styleUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview-outline-style.css'),
 		);
@@ -77,6 +80,7 @@ export class OutlineViewProvider implements vscode.WebviewViewProvider {
 <head>
 	<meta charset="UTF-8" />
 	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';" />
+	<link rel="stylesheet" href="${uiStyleUri}" />
 	<link rel="stylesheet" href="${styleUri}" />
 	<title>Outline</title>
 </head>

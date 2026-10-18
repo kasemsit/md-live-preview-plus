@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="170" viewBox="0 0 660 170" role="img" aria-labelledby="title desc">
+  <title id="title">書く・整える・共有する</title>
+  <desc id="desc">Markdownで書き、表示を整え、ファイルを共有する3つの流れ。</desc>
+  <!-- Original sample artwork for this repository; covered by its MIT license. -->
+  <rect width="660" height="170" rx="16" fill="#eef2ff"/>
+  <g font-family="'Yu Gothic UI', Meiryo, sans-serif" text-anchor="middle">
+    <rect x="20" y="25" width="180" height="120" rx="12" fill="#dbeafe" stroke="#2563eb"/>
+    <rect x="240" y="25" width="180" height="120" rx="12" fill="#dcfce7" stroke="#15803d"/>
+    <rect x="460" y="25" width="180" height="120" rx="12" fill="#ffedd5" stroke="#c2410c"/>
+    <g font-size="25" fill="#172554"><text x="110" y="77">書く</text><text x="330" y="77">整える</text><text x="550" y="77">共有する</text></g>
+    <g font-size="15" fill="#334155"><text x="110" y="112">Markdown</text><text x="330" y="112">Live Preview</text><text x="550" y="112">いつものファイル</text></g>
+    <g font-size="27" fill="#475569"><text x="220" y="94">→</text><text x="440" y="94">→</text></g>
+  </g>
+</svg>

@@ -210,7 +210,7 @@ class CheckboxWidget extends WidgetType {
 /**
  * Floats a copy button over a fenced code block's top-right corner.
  *
- * Attached as a zero-width widget at the start of the block's first content
+ * Attached as a zero-width widget on the hidden opening fence's toolbar
  * line, so it rides along with that line — no separate positioning root is
  * needed, and unlike the rendered blocks a code block is plain editor lines
  * that cannot host one anyway. `estimatedHeight: 0` keeps it out of
@@ -220,15 +220,33 @@ class CopyCodeWidget extends WidgetType {
 	constructor(
 		private readonly from: number,
 		private readonly to: number,
+		private readonly language: string,
 	) {
 		super();
 	}
 	eq(other: CopyCodeWidget): boolean {
-		return other.from === this.from && other.to === this.to;
+		return other.from === this.from && other.to === this.to && other.language === this.language;
 	}
 	toDOM(view: EditorView): HTMLElement {
 		const host = document.createElement('span');
 		host.className = 'mlp-copy-code-host';
+		const label = document.createElement('span');
+		label.className = 'mlp-code-language';
+		label.textContent = this.language || 'text';
+		label.title = label.textContent;
+		const actions = document.createElement('span');
+		actions.className = 'mlp-code-toolbar-actions';
+		host.append(label, actions);
+		// Cover the whole header, including its blank space. Widget.ignoreEvent
+		// alone does not stop CodeMirror's own press from placing a caret here.
+		const keepHeaderReadOnly = (event: Event) => {
+			event.preventDefault();
+			event.stopPropagation();
+		};
+		host.addEventListener('mousedown', keepHeaderReadOnly);
+		host.addEventListener('pointerdown', (event) => event.stopPropagation());
+		host.addEventListener('click', keepHeaderReadOnly);
+		host.addEventListener('dblclick', keepHeaderReadOnly);
 		// Code-mode first, so the button order matches every other block: the
 		// `</>` control sits leftmost in the group.
 		//
@@ -237,7 +255,7 @@ class CopyCodeWidget extends WidgetType {
 		// Editing those is how the language is changed or the block is unwrapped,
 		// and there is otherwise no way to reach them by mouse: clicking a content
 		// line places the caret without bringing the fences back.
-		host.appendChild(
+		actions.appendChild(
 			createCodeModeButton(view, {
 				anchor: host,
 				// The opening ``` line, not the first line of code. Each fence hides
@@ -257,7 +275,7 @@ class CopyCodeWidget extends WidgetType {
 		);
 		// Read the text at click time: the block's content can change after the
 		// widget is built, and the offsets are re-derived on every rebuild.
-		host.appendChild(
+		actions.appendChild(
 			createCopyCodeButton(() => view.state.sliceDoc(Math.min(this.from, view.state.doc.length), Math.min(this.to, view.state.doc.length))),
 		);
 		return host;
@@ -511,6 +529,7 @@ class TableWidget extends WidgetType {
 		// spacing wrapper) because that box is what CodeMirror measures.
 		const wrap = document.createElement('div');
 		wrap.className = 'mlp-table-wrap';
+		wrap.dataset.mlpTableFrom = String(this.tableFrom);
 		// The button is a normal element *before* the table, not an overlay on top
 		// of it: floated over the corner it was easy to miss, and it had to be kept
 		// clear of the header cell's own text. In the flow it sits in its own strip
@@ -529,6 +548,8 @@ class TableWidget extends WidgetType {
 		// The cell most recently clicked or tabbed to, remembered after editing
 		// ends so the code-mode button can put the caret back where the user was.
 		let lastCell: HTMLElement | null = null;
+		const columnCount = this.align.length || this.rows[0]?.length || 0;
+		const rowCount = this.rows.length;
 
 		// Bound to the cell being edited, not to the table. A Tab that moves to the
 		// next cell commits first, which rebuilds this widget — the table element
@@ -537,8 +558,20 @@ class TableWidget extends WidgetType {
 		// the first move. `beginEditing` attaches this to whichever cell is live.
 		function onCellKeydown(event: KeyboardEvent): void {
 			if (!editing) return;
+			if (event.isComposing) return;
 			const ref = readCellRef(editing);
 			if (!ref) return;
+			if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
+				['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+				event.preventDefault();
+				event.stopPropagation();
+				// Arrows stop at the grid edges; only Tab wraps to another row.
+				if (event.key === 'ArrowLeft' && ref.col > 0) moveFocus(ref, -1);
+				if (event.key === 'ArrowRight' && ref.col + 1 < columnCount) moveFocus(ref, 1);
+				if (event.key === 'ArrowUp' && ref.row > 0) moveFocus(ref, -columnCount);
+				if (event.key === 'ArrowDown' && ref.row + 1 < rowCount) moveFocus(ref, columnCount);
+				return;
+			}
 			if (event.key === 'Tab') {
 				event.preventDefault();
 				const current = editing;
@@ -755,13 +788,11 @@ class TableWidget extends WidgetType {
 			// again afterwards, in the table that is on screen by then.
 			if (editing) commit(editing);
 			const finish = (): void => {
-				// Scoped to *this* table's replacement, not the first one in the
-				// document: a file with several tables would otherwise start editing
-				// the wrong one. `domAtPos` resolves the widget now occupying this
-				// table's position back to its element.
-				const host = view.domAtPos(Math.min(this.tableFrom, view.state.doc.length)).node as HTMLElement | null;
-				const scope = (host?.nodeType === 1 ? host : host?.parentElement)?.closest('.mlp-table-wrap');
-				const live = (scope ?? document).querySelector<HTMLElement>(
+				// The document position at a block boundary can resolve to the
+				// surrounding content instead of the widget. Identify the replacement
+				// explicitly; a document-wide fallback would target the first table.
+				const scope = view.dom.querySelector<HTMLElement>(`.mlp-table-wrap[data-mlp-table-from="${this.tableFrom}"]`);
+				const live = scope?.querySelector<HTMLElement>(
 					`.mlp-table-cell[data-mlp-row="${row}"][data-mlp-col="${col}"]`,
 				);
 				// Tab selects the whole cell it lands on, the way a spreadsheet does,
@@ -1589,18 +1620,10 @@ function buildDecorations(view: EditorView): DecorationSet {
 								),
 							);
 						}
-						const cursorAway = !cursorTouchesRange(state, node.from, node.to);
 						const firstLineNum = doc.lineAt(node.from).number;
 						const lastLineNum = doc.lineAt(node.to).number;
-						// The opening/closing ``` fence lines have no visible text once their
-						// marker is hidden (cursor away): leave them as plain, unstyled lines
-						// (same as any blank line elsewhere) instead of styling them as part of
-						// the code box, and move the rounded-corner/padding treatment onto the
-						// first/last line that still has real content. This avoids doubling the
-						// visible gap above/below the block, while keeping the fence line at its
-						// normal height so it stays clickable/navigable for editing the language
-						// tag. Skip this for an empty fence (no content lines at all) so there's
-						// still a box to show.
+						// Reuse the hidden opening fence as a compact, neutral toolbar.
+						// Diff backgrounds belong only to the content lines beneath it.
 						const hasContentLines = lastLineNum > firstLineNum + 1;
 						const firstFenceHidden =
 							hasContentLines && !cursorTouchesRange(state, doc.line(firstLineNum).from, doc.line(firstLineNum).to);
@@ -1609,10 +1632,20 @@ function buildDecorations(view: EditorView): DecorationSet {
 						const firstContentLine = firstFenceHidden ? firstLineNum + 1 : firstLineNum;
 						const lastContentLine = lastFenceHidden ? lastLineNum - 1 : lastLineNum;
 						addLineRange(node.from, node.to, (n) => {
-							if (n === firstLineNum && firstFenceHidden) return '';
-							if (n === lastLineNum && lastFenceHidden) return '';
+							if (n === firstLineNum && firstFenceHidden) return isDiagram ? '' : 'mlp-line-code mlp-line-code-first mlp-code-toolbar-line';
+							if (n === lastLineNum && lastFenceHidden) return 'mlp-code-fence-hidden';
 							let cls = 'mlp-line-code';
+							if (lang.split(/\s+/)[0] === 'diff' && n > firstLineNum && n < lastLineNum) {
+								const prefix = state.sliceDoc(doc.line(firstLineNum).from, node.from);
+								const raw = doc.line(n).text;
+								const text = /^ *$/.test(prefix) && raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
+								if (/^(?:\+\+\+|---)(?:\s|$)/.test(text)) cls += ' mlp-diff-header';
+								else if (text.startsWith('+')) cls += ' mlp-diff-added';
+								else if (text.startsWith('-')) cls += ' mlp-diff-removed';
+								else if (text.startsWith('@@')) cls += ' mlp-diff-hunk';
+							}
 							if (n === firstContentLine) cls += ' mlp-line-code-first';
+							if (n === firstContentLine && firstFenceHidden && !isDiagram) cls += ' mlp-line-code-after-toolbar';
 							if (n === lastContentLine) cls += ' mlp-line-code-last';
 							return cls;
 						});
@@ -1621,11 +1654,11 @@ function buildDecorations(view: EditorView): DecorationSet {
 						// indentation the block is nested under, so a hand-made selection
 						// needs tidying before it can be pasted. The button copies the
 						// content lines exactly, with neither fence nor indentation.
-						if (hasContentLines && cursorAway) {
+						if (hasContentLines && firstFenceHidden && !isDiagram) {
 							const codeFrom = doc.line(firstLineNum + 1).from;
 							const codeTo = doc.line(lastLineNum - 1).to;
 							decorations.push(
-								Decoration.widget({ widget: new CopyCodeWidget(codeFrom, codeTo), side: -1 }).range(codeFrom),
+								Decoration.widget({ widget: new CopyCodeWidget(codeFrom, codeTo, lang.split(/\s+/)[0]), side: -1 }).range(doc.line(firstLineNum).from),
 							);
 						}
 						return; // descend to hide the ``` fence marks
