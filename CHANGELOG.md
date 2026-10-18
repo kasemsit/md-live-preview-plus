@@ -5,6 +5,31 @@
 All notable changes to this extension are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] — 2026-10-19
+
+### Added
+
+- `diff` code fences color added, removed, and hunk lines. File headers are bold. This displays supplied changes; it does not calculate differences.
+- Code blocks show their language in a compact header. Unspecified languages are labeled `text`.
+- Arrow keys move between table cells without leaving the current table. Movement stops at the table edges and preserves Japanese text composition and Shift-selection.
+- YAML frontmatter starts collapsed under “Document information” and can be expanded without switching to source.
+
+### Changed
+
+- Search, outline, settings, and block controls share a translucent glass appearance with reflective edges and VS Code theme colors. Existing controls and search options are preserved.
+- Text uses a centered reading area up to 1000px wide, Japanese-friendly fonts, 15px prose, and 14px tables by default. Narrow editor panes remain fluid.
+- Block buttons use consistent vector icons and rounded frames. Diagram controls remain visible; table source controls appear on hover or keyboard focus.
+
+### Fixed
+
+- Mermaid and draw.io controls sit above their diagrams instead of overlapping shapes, including multi-page draw.io files.
+- Code headers join their content cleanly, keep buttons inside the frame, and no longer show an unnecessary scrollbar with CSS themes.
+- Clicking a code block's language label or blank header space no longer reveals source accidentally.
+- Table navigation after an edit keeps focus in the correct table when a document contains several tables.
+- The column-add control matches the table height and no longer extends alongside its toolbar.
+- Tables directly below list text render in the compressed release build as well as in development builds.
+- Development previews and test artifacts are excluded from the extension package.
+
 ## [0.3.0] — 2026-09-28
 
 ### Changed
@@ -304,6 +329,31 @@ callouts and export are still missing.
 
 この拡張機能の主な変更点をまとめています。
 バージョン番号は [セマンティック バージョニング](https://semver.org/lang/ja/) に従っています。
+
+## [0.4.0] — 2026-10-19
+
+### 追加
+
+- `diff`コードブロックの追加行・削除行・変更箇所を色分けし、ファイル名の行を太字で表示します。書かれた差分を表示する機能で、差分の計算は行いません。
+- コードブロックのヘッダーに言語名を表示します。指定がない場合は`text`です。
+- 表のセル間を矢印キーで移動できます。表の端で止まり、日本語入力中の操作やShiftでの文字選択を保ちます。
+- 先頭のYAMLを「文書情報」として折りたたみ表示します。元の記法に切り替えずに展開できます。
+
+### 変更
+
+- 検索・目次・設定・各操作ボタンを、縁の反射と透明感のあるガラス調に揃えました。色はVS Codeのテーマに追従し、既存の項目数と検索オプションを保ちます。
+- 本文を最大1000pxの中央配置にしました。日本語向けフォントを使い、標準では本文15px・表14pxに調整しました。狭い画面では幅に合わせて表示します。
+- ボタンのアイコンと角丸を揃えました。図の操作ボタンは常に表示し、表の編集ボタンはマウスを乗せたときやキーボードで選んだときに表示します。
+
+### 修正
+
+- Mermaidとdraw.ioの操作ボタンを図の上に配置し、図形との重なりを解消しました。複数ページのdraw.ioにも対応します。
+- コードのヘッダーと本文の段差、ボタンの余白、CSSテーマ使用時の不要なスクロールバーを修正しました。
+- コードの言語名やヘッダーの余白をクリックしても、意図せず元の記法に切り替わらないようにしました。
+- 複数の表がある文書で、編集後のセル移動先が別の表にずれる問題を修正しました。
+- 列を追加する右側のボタンを表の高さに揃え、上の編集ボタンの横まで伸びないようにしました。
+- 箇条書きの直下にある表が、圧縮した公開用プログラムでも表示されるようにしました。
+- 作業用プレビューやテスト用ファイルを配布物から除外しました。
 
 ## [0.3.0] — 2026-09-28
 
