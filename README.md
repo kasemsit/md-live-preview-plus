@@ -18,6 +18,7 @@ This fork adds:
 - **Pandoc citations** `[@key]`: each key links to its `@key` reference note, with hover and click as for wikilinks. A key with no note is drawn faint.
 - **A right-click menu** that offers what fits the spot:
   - copy a block link (adds the `^id` for you), copy as rich text for Word, add a REVIEW comment, ask Claude about the selection;
+  - search Google or Google Scholar for the selection;
   - open a link to the side, copy a formula's TeX;
   - insert, delete and sort table rows and columns, copy a table for Excel;
   - renumber footnotes.
@@ -33,6 +34,8 @@ This fork adds:
   - **Insert Footnote** (`Ctrl+Alt+6`, or `Cmd+Alt+6` on macOS) adds the next number at the cursor and its definition at the end of the file.
 - **Block ids** (`… ^ma-32`) are dimmed rather than shown at full strength.
 - **HTML comments** (`<!-- … -->`) are tinted as notes to the writer.
+- **Image embeds** `![[name.png]]` (and `|300` for width): the file is found by name anywhere in the workspace.
+- **Underline** with Ctrl/Cmd+U, written as `<u>…</u>`.
 - **Math**: `$…$` and `$$…$$` render with KaTeX, in the text, in tables and in previews. Click a formula to edit its TeX.
 - **Claude Code sees your selection**: the exact Markdown source, its line numbers and the file path. A webview's selection is otherwise invisible to VS Code and to Claude.
   - The file is saved when you select, so the line numbers match the file on disk.

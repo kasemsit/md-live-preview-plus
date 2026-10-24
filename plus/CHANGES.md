@@ -2,6 +2,16 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
+## 0.4.8
+
+- **Image embeds** `![[name.png]]` render as images, as in Obsidian:
+  - the file is found by name anywhere in the workspace, so attachments kept in their own folder load;
+  - `![[name.png|300]]` sets the width, `![[name.png|300x200]]` width and height;
+  - with duplicate names, the file at the written path wins, then one in the note's own folder, then the shortest path. Write part of the path to choose, e.g. `![[Folder/name.png]]`;
+  - a missing file says so; the caret on the line shows the source.
+- **Underline**: Ctrl/Cmd+U wraps the selection in `<u>…</u>`, or unwraps it. Markdown has no underline; Obsidian, Pandoc and Word exports use the tag. The preview hides the tags and underlines the text, in tables too.
+- **Search Google** and **Search Google Scholar** in the right-click menu, for the selected text.
+
 ## 0.4.7
 
 **A right-click menu** in the Live Preview. It is VS Code's own menu, and it shows only the items that fit what was clicked:
