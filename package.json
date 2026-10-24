@@ -230,6 +230,16 @@
         "command": "mdLivePreview.plus.table.sortDescending",
         "title": "Sort Table by This Column (Z→A)",
         "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.searchGoogle",
+        "title": "Search Google",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.searchScholar",
+        "title": "Search Google Scholar",
+        "category": "Markdown Live Preview"
       }
     ],
     "menus": {
@@ -333,6 +343,14 @@
         {
           "command": "mdLivePreview.plus.table.sortDescending",
           "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.searchGoogle",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.searchScholar",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
         }
       ],
       "webview/context": [
@@ -425,6 +443,16 @@
           "command": "mdLivePreview.plus.table.sortDescending",
           "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
           "group": "5_plus_table@8"
+        },
+        {
+          "command": "mdLivePreview.plus.searchGoogle",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpHasSelection",
+          "group": "1_plus_search@1"
+        },
+        {
+          "command": "mdLivePreview.plus.searchScholar",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpHasSelection",
+          "group": "1_plus_search@2"
         }
       ]
     },

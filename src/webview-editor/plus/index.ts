@@ -8,6 +8,7 @@ import { blockIdPlugin } from './blockIds';
 import { commentPlugin } from './comments';
 import { citationPlugin } from './citations';
 import { mathExtension } from './math';
+import { underlineExtension } from './underline';
 import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
@@ -29,6 +30,7 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 		commentPlugin,
 		citationPlugin,
 		mathExtension,
+		underlineExtension,
 		selectionReporter(post),
 		contextMenuExtension(post),
 		plusCompletion,

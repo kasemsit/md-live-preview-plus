@@ -21,6 +21,8 @@ const WEBVIEW_COMMANDS: Record<string, PlusCommand> = {
 	'mdLivePreview.plus.openAsTextHere': 'openAsTextHere',
 	'mdLivePreview.plus.openLinkBeside': 'openLinkBeside',
 	'mdLivePreview.plus.copyTex': 'copyTex',
+	'mdLivePreview.plus.searchGoogle': 'searchGoogle',
+	'mdLivePreview.plus.searchScholar': 'searchScholar',
 	'mdLivePreview.plus.renumberFootnotes': 'renumberFootnotes',
 	'mdLivePreview.plus.table.insertRowAbove': 'table.insertRowAbove',
 	'mdLivePreview.plus.table.insertRowBelow': 'table.insertRowBelow',
@@ -112,6 +114,12 @@ export async function handlePlusDo(session: PlusSession, message: Extract<PlusEd
 		case 'openBeside':
 			if (message.href.startsWith('wiki:')) await openWikilink(session, message.href.slice('wiki:'.length), true);
 			else await vscode.env.openExternal(vscode.Uri.parse(message.href));
+			return;
+		case 'openUrl':
+			// Only the two search pages this menu offers.
+			if (/^https:\/\/(www\.google\.com\/search|scholar\.google\.com\/scholar)\?q=/.test(message.url)) {
+				await vscode.env.openExternal(vscode.Uri.parse(message.url));
+			}
 			return;
 		case 'notify':
 			if (message.error) void vscode.window.showWarningMessage(message.message);

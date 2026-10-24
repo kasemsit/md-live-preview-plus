@@ -288,6 +288,27 @@ function tableCommand(view: EditorView, command: PlusCommand): void {
 	view.dispatch({ changes: { from: t.from, to: t.to, insert }, ...(after !== null ? { selection: { anchor: after } } : {}) });
 }
 
+// ── Web search ──
+
+/**
+ * Searches the web for the selection, as read (markup, links and notes reduced
+ * to their text). `&` and `#` are dropped from the query rather than escaped:
+ * the URL passes through VS Code's own URI handling on its way to the browser,
+ * which would turn an escaped `&` back into a parameter separator.
+ */
+function searchWeb(view: EditorView, base: string): void {
+	const { state } = view;
+	const sel = state.selection.main;
+	if (sel.empty) return notify('Select the text to search for.', true);
+	const query = htmlToText(markdownToHtml(state.sliceDoc(sel.from, sel.to)))
+		.replace(/[&#]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim()
+		.slice(0, 300);
+	if (!query) return notify('Select the text to search for.', true);
+	post({ type: 'plusDo', action: 'openUrl', url: base + encodeURIComponent(query) });
+}
+
 // ── Dispatch ──
 
 export function runPlusCommand(view: EditorView, command: PlusCommand, range?: { from: number; to: number }): void {
@@ -312,6 +333,9 @@ export function runPlusCommand(view: EditorView, command: PlusCommand, range?: {
 		}
 		case 'renumberFootnotes':
 			return renumberFootnotes(view);
+		case 'searchGoogle':
+		case 'searchScholar':
+			return searchWeb(view, command === 'searchScholar' ? 'https://scholar.google.com/scholar?q=' : 'https://www.google.com/search?q=');
 		default:
 			return tableCommand(view, command);
 	}

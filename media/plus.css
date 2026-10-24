@@ -101,6 +101,9 @@
 .mlp-math-pending, .mlp-math-failed { font-family: var(--vscode-editor-font-family, monospace); font-size: 0.9em; opacity: 0.65; }
 .mlp-math-failed { text-decoration: underline wavy rgba(220, 38, 38, 0.6); }
 
+/* ── Underline (<u>…</u>, Ctrl+U) ── */
+.mlp-underline { text-decoration: underline; text-underline-offset: 0.18em; }
+
 /* ── Block ids (… ^ma-32): a link target, not prose ── */
 .mlp-block-id { opacity: 0.4; font-size: 0.85em; }
 

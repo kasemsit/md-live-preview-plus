@@ -86,6 +86,8 @@ export type PlusCommand =
 	| 'openAsTextHere'
 	| 'openLinkBeside'
 	| 'copyTex'
+	| 'searchGoogle'
+	| 'searchScholar'
 	| 'renumberFootnotes'
 	| 'table.insertRowAbove'
 	| 'table.insertRowBelow'
@@ -122,6 +124,7 @@ export type PlusEditorToHostMessage =
 	| { type: 'plusDo'; action: 'copyBlockLink'; anchor: string }
 	| { type: 'plusDo'; action: 'openAsText'; line: number }
 	| { type: 'plusDo'; action: 'openBeside'; href: string }
+	| { type: 'plusDo'; action: 'openUrl'; url: string }
 	| { type: 'plusDo'; action: 'notify'; message: string; error?: boolean };
 
 export interface StyleEntry {

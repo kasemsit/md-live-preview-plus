@@ -342,3 +342,12 @@ describe('math syntax', () => {
 		expect(nodes('- item\n  $$\n  y\n  $$\n- next\n', 'BlockMath')).toEqual(['$$\n  y\n  $$']);
 	});
 });
+
+describe('underline toggle', () => {
+	it('wraps, and unwraps from either side of the selection', async () => {
+		const { computeWrapToggle } = await import('./underline');
+		expect(computeWrapToggle('word', 'a ', ' b', 2, 6, '<u>', '</u>').insert).toBe('<u>word</u>');
+		expect(computeWrapToggle('word', '<u>', '</u>', 5, 9, '<u>', '</u>')).toMatchObject({ from: 2, to: 13, insert: 'word' });
+		expect(computeWrapToggle('<u>word</u>', '', '', 0, 11, '<u>', '</u>').insert).toBe('word');
+	});
+});

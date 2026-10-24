@@ -597,3 +597,40 @@ test.describe('right-click menu', () => {
 		expect(html).not.toContain('class=');
 	});
 });
+
+test.describe('underline', () => {
+	test('Ctrl+U wraps the selection in <u>…</u> and again unwraps it', async ({ page }) => {
+		const DOC = '# T\n\nsome words here\n';
+		await mountEditor(page, DOC);
+		await page.locator('.cm-line').filter({ hasText: 'some words' }).click({ position: { x: 4, y: 6 } });
+		await page.keyboard.press('Home');
+		await page.keyboard.press('Shift+End');
+		await page.keyboard.press('Control+u');
+		expect(await docText(page, DOC)).toBe('# T\n\n<u>some words here</u>\n');
+		await page.keyboard.press('Control+u');
+		expect(await docText(page, DOC)).toBe(DOC);
+	});
+
+	test('<u>…</u> renders underlined with the tags hidden, in text and in tables', async ({ page }) => {
+		await mountEditor(page, '# T\n\nA <u>marked</u> word.\n\n| a | b |\n|---|---|\n| <u>cell **bold**</u> | 2 |\n\nEnd.\n');
+		const line = page.locator('.cm-line').filter({ hasText: 'marked' });
+		await expect(line.locator('.mlp-underline')).toHaveText('marked');
+		await expect(line).toHaveText('A marked word.');
+		await expect(page.locator('.mlp-table-wrap td u')).toHaveText('cell bold');
+		await expect(page.locator('.mlp-table-wrap td u strong')).toHaveText('bold');
+	});
+});
+
+test('Search Google / Google Scholar open the selection as a query', async ({ page }) => {
+	await mountEditor(page, '# T\n\nHungarian algorithm **assignment** & matching\n\nEnd.\n');
+	await page.locator('.cm-line').filter({ hasText: 'Hungarian' }).click({ position: { x: 4, y: 6 } });
+	await page.keyboard.press('Home');
+	await page.keyboard.press('Shift+End');
+	await run(page, 'searchScholar');
+	await expect.poll(() => lastDo(page)).toMatchObject({
+		action: 'openUrl',
+		url: 'https://scholar.google.com/scholar?q=Hungarian%20algorithm%20assignment%20matching',
+	});
+	await run(page, 'searchGoogle');
+	await expect.poll(() => lastDo(page)).toMatchObject({ url: 'https://www.google.com/search?q=Hungarian%20algorithm%20assignment%20matching' });
+});
