@@ -361,6 +361,11 @@ export class DocumentSyncSession {
 		this.post({ type: 'plusInsertFootnote' });
 	}
 
+	/** md-live-preview-plus: a URI this editor's webview can load (for embedded images). */
+	asWebviewUri(uri: vscode.Uri): string {
+		return this.webviewPanel.webview.asWebviewUri(uri).toString();
+	}
+
 	/** md-live-preview-plus: send a plus message (a context-menu command) to this editor. */
 	postPlus(message: PlusHostToEditorMessage): void {
 		this.post(message);

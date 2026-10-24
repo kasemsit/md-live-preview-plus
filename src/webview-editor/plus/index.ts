@@ -9,6 +9,7 @@ import { commentPlugin } from './comments';
 import { citationPlugin } from './citations';
 import { mathExtension } from './math';
 import { underlineExtension } from './underline';
+import { embedPlugin } from './embeds';
 import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
@@ -31,6 +32,7 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 		citationPlugin,
 		mathExtension,
 		underlineExtension,
+		embedPlugin,
 		selectionReporter(post),
 		contextMenuExtension(post),
 		plusCompletion,

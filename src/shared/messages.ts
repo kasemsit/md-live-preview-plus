@@ -102,6 +102,8 @@ export type PlusCommand =
 export type PlusHostToEditorMessage =
 	| { type: 'plusNotes'; requestId: number; notes: PlusNote[] }
 	| { type: 'plusPreviewResult'; requestId: number; preview: PlusPreview }
+	// `src` is a webview-loadable URI, or null when no such file exists.
+	| { type: 'plusEmbedResult'; requestId: number; src: string | null }
 	| { type: 'plusAnchors'; requestId: number; anchors: PlusAnchor[] }
 	| { type: 'plusInsertFootnote' }
 	// `range` (document offsets) overrides the selection — used by tests and by
@@ -118,6 +120,8 @@ export type PlusEditorToHostMessage =
 	| { type: 'plusListAnchors'; requestId: number; target: string }
 	// `target` is everything after `wiki:` — `note#anchor`.
 	| { type: 'plusPreview'; requestId: number; target: string }
+	// `![[image.png]]`: find the file by name and give back a URI the webview may load.
+	| { type: 'plusResolveEmbed'; requestId: number; target: string }
 	// What a context-menu command needs the host for: the clipboard, opening
 	// files, telling the user something.
 	| { type: 'plusDo'; action: 'copy'; text: string; notice: string }

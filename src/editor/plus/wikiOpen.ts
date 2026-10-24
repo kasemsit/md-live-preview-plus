@@ -14,6 +14,7 @@ import { linkFileName, rankMatches } from '../../shared/plusLinks';
 export interface PlusSession {
 	getDocument(): vscode.TextDocument;
 	jumpToLine(line: number): void;
+	asWebviewUri(uri: vscode.Uri): string;
 }
 
 const sessions = new Set<PlusSession>();

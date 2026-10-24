@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type { EditorToHostMessage, HostToEditorMessage } from '../../shared/messages';
-import { hasSessionFor, listAnchors, listNotes, openWikilink, previewWikilink, trackSession as trackWikiSession, type PlusSession } from './wikiOpen';
+import { hasSessionFor, listAnchors, listNotes, openWikilink, previewWikilink, resolveWikiTarget, trackSession as trackWikiSession, type PlusSession } from './wikiOpen';
 import { forgetSelectionOf, writeSelection } from './selectionFile';
 import { handlePlusDo } from './contextMenu';
 
@@ -40,6 +40,12 @@ export function handlePlusMessage(
 		case 'plusPreview':
 			void previewWikilink(session, message.target).then((preview) =>
 				post({ type: 'plusPreviewResult', requestId: message.requestId, preview }),
+			);
+			return true;
+		case 'plusResolveEmbed':
+			void resolveWikiTarget(session.getDocument().uri, message.target.trim()).then(
+				(uri) => post({ type: 'plusEmbedResult', requestId: message.requestId, src: uri ? session.asWebviewUri(uri) : null }),
+				() => post({ type: 'plusEmbedResult', requestId: message.requestId, src: null }),
 			);
 			return true;
 		case 'plusDo':

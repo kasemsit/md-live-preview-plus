@@ -55,16 +55,43 @@ export function listAnchors(target: string): Promise<PlusAnchor[]> {
 	return request<PlusAnchor[]>((requestId) => ({ type: 'plusListAnchors', requestId, target }), []);
 }
 
+const embeds = new Map<string, Promise<string | null>>();
+
+/** A loadable URI for an embedded file, found by name like a wikilink; cached for the session. */
+export function resolveEmbed(target: string): Promise<string | null> {
+	let src = embeds.get(target);
+	if (!src) {
+		src = request<string | null>((requestId) => ({ type: 'plusResolveEmbed', requestId, target }), null);
+		embeds.set(target, src);
+		// A miss may be a file not yet created; ask again next time.
+		void src.then((value) => value === null && embeds.delete(target));
+	}
+	return src;
+}
+
 export function previewLink(target: string): Promise<PlusPreview | null> {
 	return request<PlusPreview | null>((requestId) => ({ type: 'plusPreview', requestId, target }), null);
 }
 
 /** Routes a host reply to its request. Returns true when the message was one. */
 export function handlePlusReply(message: HostToEditorMessage): boolean {
-	if (message.type === 'plusNotes' || message.type === 'plusAnchors' || message.type === 'plusPreviewResult') {
+	if (
+		message.type === 'plusNotes' ||
+		message.type === 'plusAnchors' ||
+		message.type === 'plusPreviewResult' ||
+		message.type === 'plusEmbedResult'
+	) {
 		const resolve = waiting.get(message.requestId);
 		waiting.delete(message.requestId);
-		resolve?.(message.type === 'plusNotes' ? message.notes : message.type === 'plusAnchors' ? message.anchors : message.preview);
+		resolve?.(
+			message.type === 'plusNotes'
+				? message.notes
+				: message.type === 'plusAnchors'
+					? message.anchors
+					: message.type === 'plusPreviewResult'
+						? message.preview
+						: message.src,
+		);
 		return true;
 	}
 	return false;

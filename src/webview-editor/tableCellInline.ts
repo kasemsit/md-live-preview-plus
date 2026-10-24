@@ -112,6 +112,11 @@ function renderNode(parent: HTMLElement, node: SyntaxNode, src: string, hooks: C
 			return;
 		}
 		case 'Image': {
+			// plus: an Obsidian embed `![[name.png]]` is not a Markdown image; shown as written.
+			if (src.slice(node.from, node.from + 3) === '![[') {
+				appendText(parent, src.slice(node.from, node.to));
+				return;
+			}
 			const { label, url, title } = readLinkParts(node, src);
 			const img = document.createElement('img');
 			img.src = hooks.resolveImageSrc(url);

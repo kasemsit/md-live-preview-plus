@@ -37,6 +37,10 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 				// `![](assets/foo.png)`, including ones this extension's own
 				// paste/drop feature inserts) resolve relative to here.
 				vscode.Uri.joinPath(document.uri, '..'),
+				// md-live-preview-plus: `![[image.png]]` embeds resolve by name
+				// anywhere in the workspace (Obsidian keeps them in an attachments
+				// folder), so the workspace itself must be loadable.
+				...(vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri),
 			],
 		};
 		webviewPanel.webview.html = this.buildHtml(webviewPanel.webview);

@@ -1708,6 +1708,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 						return false;
 					}
 					case 'Image': {
+						// plus: `![[name.png]]` is an Obsidian embed, drawn by plus/embeds.ts.
+						if (state.sliceDoc(node.from, node.from + 3) === '![[') return false;
 						const marks = node.node.getChildren('LinkMark');
 						if (marks.length < 2) return;
 						const altFrom = marks[0].to;

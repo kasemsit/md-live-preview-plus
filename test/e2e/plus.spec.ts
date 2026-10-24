@@ -634,3 +634,30 @@ test('Search Google / Google Scholar open the selection as a query', async ({ pa
 	await run(page, 'searchGoogle');
 	await expect.poll(() => lastDo(page)).toMatchObject({ url: 'https://www.google.com/search?q=Hungarian%20algorithm%20assignment%20matching' });
 });
+
+test.describe('image embeds ![[…]]', () => {
+	// A 1×1 PNG, standing in for the URI the host would hand back.
+	const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+	test('the host finds the file by name; the image shows at the given width', async ({ page }) => {
+		await mountEditor(page, '# T\n\nBefore.\n\n![[am03-dustbin.png|200]]\n\nAfter.\n');
+		await expect.poll(async () => (await posted(page)).some((m) => m.type === 'plusResolveEmbed')).toBe(true);
+		const req = (await posted(page)).filter((m) => m.type === 'plusResolveEmbed').at(-1)!;
+		expect(req.target).toBe('am03-dustbin.png');
+		await postToWebview(page, { type: 'plusEmbedResult', requestId: req.requestId, src: PNG });
+		const img = page.locator('.cm-line img.mlp-embed-image');
+		await expect(img).toHaveAttribute('src', PNG);
+		await expect(img).toHaveCSS('width', '200px');
+		await expect(page.locator('.cm-content')).not.toContainText('![[');
+	});
+
+	test('a missing file says so; the caret on the line shows the source', async ({ page }) => {
+		await mountEditor(page, '# T\n\n![[nope.png]]\n\nAfter.\n');
+		await expect.poll(async () => (await posted(page)).some((m) => m.type === 'plusResolveEmbed')).toBe(true);
+		const req = (await posted(page)).filter((m) => m.type === 'plusResolveEmbed').at(-1)!;
+		await postToWebview(page, { type: 'plusEmbedResult', requestId: req.requestId, src: null });
+		await expect(page.locator('.mlp-embed-missing')).toHaveText('nope.png not found in the workspace');
+		await page.locator('.mlp-embed-missing').click();
+		await expect(page.locator('.cm-content')).toContainText('![[nope.png]]');
+	});
+});

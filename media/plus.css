@@ -104,6 +104,15 @@
 /* ── Underline (<u>…</u>, Ctrl+U) ── */
 .mlp-underline { text-decoration: underline; text-underline-offset: 0.18em; }
 
+/* ── Image embeds ![[name.png]] ── */
+.mlp-embed { display: inline-block; max-width: 100%; }
+.mlp-embed-image { max-width: 100%; height: auto; vertical-align: middle; border-radius: 4px; }
+.mlp-embed-loading { min-height: 2em; min-width: 6em; background: rgba(127, 127, 127, 0.08); border-radius: 4px; }
+.mlp-embed-missing {
+	font-size: 0.9em; opacity: 0.7; font-style: italic;
+	padding: 0.15em 0.5em; border: 1px dashed rgba(127, 127, 127, 0.5); border-radius: 4px;
+}
+
 /* ── Block ids (… ^ma-32): a link target, not prose ── */
 .mlp-block-id { opacity: 0.4; font-size: 0.85em; }
 

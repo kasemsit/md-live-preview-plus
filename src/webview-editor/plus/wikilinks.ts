@@ -59,6 +59,8 @@ function build(view: EditorView): DecorationSet {
 			const labelFrom = from + link.labelFrom;
 			const labelTo = from + link.labelTo;
 			if (labelTo <= labelFrom) continue;
+			// `![[image.png]]` is an embed, drawn by plus/embeds.ts.
+			if (state.sliceDoc(s - 1, s) === '!' && /\.(png|jpe?g|gif|svg|webp|bmp|avif)$/i.test(link.target)) continue;
 			if (cursorTouchesRange(state, s, e) || inSourceContext(state, s)) continue;
 			out.push(hidden.range(s, labelFrom), linkMark(link.target).range(labelFrom, labelTo), hidden.range(labelTo, e));
 		}
