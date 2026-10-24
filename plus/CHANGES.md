@@ -2,7 +2,7 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
-## Unreleased
+## 0.4.9
 
 - **Text size**: Larger Text, Smaller Text and Reset Text Size in the right-click menu.
   - The size is the setting `mdLivePreview.plus.textScale`, so it is remembered next time and applies to every open preview.
