@@ -2,7 +2,7 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
-## Unreleased
+## 0.4.10
 
 - **Tracked changes from outside the editor.** When an open note changes on disk (Claude writing it, a git checkout, another program), the Live Preview shows what changed on the rendered page.
   - Insertions are green and deletions are struck through in red, word by word, Thai included.
