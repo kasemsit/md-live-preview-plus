@@ -8,6 +8,7 @@ import { checkForUpdate } from './editor/plus/updateCheck';
 import { initSelectionStatus } from './editor/plus/selectionFile';
 import { registerBacklinks } from './editor/plus/backlinks';
 import { registerContextMenu } from './editor/plus/contextMenu';
+import { registerTextScale } from './editor/plus/textScale';
 
 function getActiveMarkdownUri(): vscode.Uri | undefined {
 	if (vscode.window.activeTextEditor?.document.languageId === 'markdown') {
@@ -200,6 +201,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	};
 	registerBacklinks(context, activeNote);
 	registerContextMenu(context, (message) => provider.postPlusToActive(message), activeNote);
+	registerTextScale(context, (message) => provider.broadcastPlus(message));
 
 	context.subscriptions.push(
 		vscode.workspace.onDidCloseTextDocument((doc) => {

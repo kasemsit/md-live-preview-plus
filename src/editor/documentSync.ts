@@ -5,6 +5,7 @@ import { extensionForMimeType, generateImageFileName } from '../shared/imageAsse
 import { resolveLinkTarget } from '../shared/linkTarget';
 import { isPathInside } from '../shared/pathContainment';
 import { handlePlusMessage, trackSession, takePendingJump } from './plus';
+import { textScale } from './plus/textScale';
 
 /**
  * Largest `.drawio` file that will be read and parsed.
@@ -260,6 +261,8 @@ export class DocumentSyncSession {
 			baseUri: `${this.webviewPanel.webview.asWebviewUri(docDir).toString()}/`,
 		});
 		this.lastAppliedVersion = this.document.version;
+		// md-live-preview-plus: the reader's remembered text size.
+		this.post({ type: 'plusTextScale', scale: textScale() });
 		// md-live-preview-plus: a wikilink with an anchor opened this note.
 		const jump = takePendingJump(this.document.uri);
 		if (jump) setTimeout(() => this.jumpToLine(jump), 250);

@@ -90,6 +90,11 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 		return this.findActiveSession()?.getDocument().uri;
 	}
 
+	/** md-live-preview-plus: sends a plus message to every open Live Preview panel. */
+	broadcastPlus(message: PlusHostToEditorMessage): void {
+		for (const session of this.sessions) session.postPlus(message);
+	}
+
 	/** md-live-preview-plus: sends a plus message to the active Live Preview panel; false when there is none. */
 	postPlusToActive(message: PlusHostToEditorMessage): boolean {
 		const session = this.findActiveSession();

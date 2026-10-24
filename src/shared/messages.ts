@@ -104,6 +104,8 @@ export type PlusHostToEditorMessage =
 	| { type: 'plusPreviewResult'; requestId: number; preview: PlusPreview }
 	// `src` is a webview-loadable URI, or null when no such file exists.
 	| { type: 'plusEmbedResult'; requestId: number; src: string | null }
+	// The reader's text size, a factor over the theme's (setting mdLivePreview.plus.textScale).
+	| { type: 'plusTextScale'; scale: number }
 	| { type: 'plusAnchors'; requestId: number; anchors: PlusAnchor[] }
 	| { type: 'plusInsertFootnote' }
 	// `range` (document offsets) overrides the selection — used by tests and by

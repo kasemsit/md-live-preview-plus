@@ -10,6 +10,8 @@ import { citationPlugin } from './citations';
 import { mathExtension } from './math';
 import { underlineExtension } from './underline';
 import { embedPlugin } from './embeds';
+import { spacingPlugin } from './spacing';
+import { reapplyTextScale, setTextScale } from './textScale';
 import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
@@ -33,6 +35,7 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 		mathExtension,
 		underlineExtension,
 		embedPlugin,
+		spacingPlugin,
 		selectionReporter(post),
 		contextMenuExtension(post),
 		plusCompletion,
@@ -42,6 +45,12 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 /** Handles a plus message from the host. Returns true when it was one. */
 export function handlePlusHostMessage(view: EditorView | undefined, message: HostToEditorMessage): boolean {
 	if (handlePlusReply(message)) return true;
+	if (message.type === 'plusTextScale') {
+		setTextScale(view, message.scale);
+		return true;
+	}
+	// Not ours, but a new document or theme changes the size the text scale multiplies.
+	if (message.type === 'init' || message.type === 'applyCss') reapplyTextScale();
 	if (message.type === 'plusRun') {
 		if (view) runPlusCommand(view, message.command, message.range);
 		return true;

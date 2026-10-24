@@ -240,6 +240,21 @@
         "command": "mdLivePreview.plus.searchScholar",
         "title": "Search Google Scholar",
         "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.textLarger",
+        "title": "Larger Text",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.textSmaller",
+        "title": "Smaller Text",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.textReset",
+        "title": "Reset Text Size",
+        "category": "Markdown Live Preview"
       }
     ],
     "menus": {
@@ -453,6 +468,21 @@
           "command": "mdLivePreview.plus.searchScholar",
           "when": "webviewId == 'mdLivePreview.editor' && mlpHasSelection",
           "group": "1_plus_search@2"
+        },
+        {
+          "command": "mdLivePreview.plus.textLarger",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "7_plus_view@1"
+        },
+        {
+          "command": "mdLivePreview.plus.textSmaller",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "7_plus_view@2"
+        },
+        {
+          "command": "mdLivePreview.plus.textReset",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "7_plus_view@3"
         }
       ]
     },
@@ -511,6 +541,13 @@
           "type": "boolean",
           "default": true,
           "description": "md-live-preview-plus: once a day, check GitHub Releases (api.github.com) for a newer version and offer the download page."
+        },
+        "mdLivePreview.plus.textScale": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.7,
+          "maximum": 2,
+          "description": "md-live-preview-plus: text size in the Live Preview, as a factor over the CSS theme's own size (1 = as the theme sets it). Changed by Larger Text / Smaller Text in the right-click menu."
         }
       }
     },

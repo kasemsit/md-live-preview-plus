@@ -81,3 +81,22 @@ suite('md-live-preview-plus context menu', () => {
 		for (const { command } of menu) assert.ok(all.has(command), `${command} is in the menu but not registered`);
 	});
 });
+
+suite('md-live-preview-plus text size', () => {
+	const config = () => vscode.workspace.getConfiguration('mdLivePreview');
+	teardown(async () => {
+		await config().update('plus.textScale', undefined, vscode.ConfigurationTarget.Global);
+	});
+
+	test('Larger, Smaller and Reset step the remembered setting', async () => {
+		await config().update('plus.textScale', undefined, vscode.ConfigurationTarget.Global);
+		await vscode.commands.executeCommand('mdLivePreview.plus.textLarger');
+		assert.strictEqual(config().get('plus.textScale'), 1.1);
+		await vscode.commands.executeCommand('mdLivePreview.plus.textLarger');
+		assert.strictEqual(config().get('plus.textScale'), 1.2);
+		await vscode.commands.executeCommand('mdLivePreview.plus.textSmaller');
+		assert.strictEqual(config().get('plus.textScale'), 1.1);
+		await vscode.commands.executeCommand('mdLivePreview.plus.textReset');
+		assert.strictEqual(config().get('plus.textScale'), 1);
+	});
+});

@@ -678,3 +678,47 @@ test.describe('tables with math, and brackets that are not links', () => {
 		await expect(page.locator('.mlp-table-wrap td .mlp-link')).toHaveCount(0);
 	});
 });
+
+test.describe('spacing', () => {
+	const DOC = '# T\n\nOne.\n\nTwo:\n\n$$x^2$$\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nEnd.\n';
+
+	test('blank lines beside a formula or table collapse; between paragraphs they stay', async ({ page }) => {
+		await mountEditor(page, DOC);
+		const lines = page.locator('.cm-content > *');
+		// # T, blank, One., blank, Two:, blank, formula, blank, table, blank, End.
+		await expect(page.locator('.cm-line.mlp-blank-collapse')).toHaveCount(3);
+		const between = await lines.nth(3).evaluate((el) => [el.className, el.getBoundingClientRect().height]);
+		expect(String(between[0])).not.toContain('mlp-blank-collapse');
+		expect(Number(between[1])).toBeGreaterThan(8);
+	});
+
+	test('a one-line display formula is as tall as the formula, not three lines', async ({ page }) => {
+		await mountEditor(page, DOC);
+		const line = page.locator('.cm-line').filter({ has: page.locator('.mlp-math-display .katex') });
+		const height = await line.evaluate((el) => el.getBoundingClientRect().height);
+		expect(height).toBeLessThan(50);
+	});
+
+	test('the caret on a collapsed blank line opens it', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await page.locator('.cm-line').filter({ hasText: 'Two:' }).click();
+		await page.keyboard.press('End');
+		await page.keyboard.press('ArrowDown');
+		await expect(page.locator('.cm-line.mlp-blank-collapse')).toHaveCount(2);
+	});
+});
+
+test('text size: the host\'s factor scales the reading column, and 1 restores it', async ({ page }) => {
+	await mountEditor(page, '# T\n\nSome text.\n');
+	const size = () => page.locator('.cm-content').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+	const base = await size();
+	await postToWebview(page, { type: 'plusTextScale', scale: 1.5 });
+	await expect.poll(size).toBeCloseTo(base * 1.5, 1);
+	// The base is VS Code's editor font size (at least 15px, see the theme CSS);
+	// when it changes, the next theme refresh re-measures it and keeps the factor.
+	await page.evaluate(() => document.documentElement.style.setProperty('--vscode-editor-font-size', '20px'));
+	await postToWebview(page, { type: 'applyCss', css: '' });
+	await expect.poll(size).toBeCloseTo(30, 1);
+	await postToWebview(page, { type: 'plusTextScale', scale: 1 });
+	await expect.poll(size).toBeCloseTo(20, 1);
+});

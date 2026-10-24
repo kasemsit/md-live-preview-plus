@@ -94,6 +94,9 @@
 /* ── Math ($…$ inline, $$…$$ display), rendered by KaTeX ── */
 .mlp-math .katex { font-size: 1.08em; }
 .mlp-math-display { display: block; text-align: center; margin: 0.3em 0; overflow-x: auto; overflow-y: hidden; }
+/* A one-line $$…$$ sits inside a text line: as a block there, the browser
+   wrapped it in an empty line box above and below (54px of nothing). */
+.cm-line .mlp-math-display { display: inline-block; width: 100%; vertical-align: middle; margin: 0.4em 0; }
 .mlp-math-display .katex-display { margin: 0; }
 .mlp-math-block { padding: 0.35em 0; cursor: text; }
 .mlp-math-block:hover { background: rgba(127, 127, 127, 0.06); border-radius: 4px; }
@@ -111,6 +114,15 @@
 .mlp-embed-missing {
 	font-size: 0.9em; opacity: 0.7; font-style: italic;
 	padding: 0.15em 0.5em; border: 1px dashed rgba(127, 127, 127, 0.5); border-radius: 4px;
+}
+
+/* ── Blank lines beside tables, display math and code collapse (plus/spacing.ts) ── */
+.cm-line.mlp-blank-collapse {
+	line-height: 4px !important;
+	height: 4px;
+	padding-top: 0 !important;
+	padding-bottom: 0 !important;
+	overflow: hidden;
 }
 
 /* ── Block ids (… ^ma-32): a link target, not prose ── */

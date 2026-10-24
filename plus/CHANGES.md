@@ -2,6 +2,19 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
+## Unreleased
+
+- **Text size**: Larger Text, Smaller Text and Reset Text Size in the right-click menu.
+  - The size is the setting `mdLivePreview.plus.textScale`, so it is remembered next time and applies to every open preview.
+  - It scales the preview's base size, which is your VS Code editor font size and at least 15px; headings, tables and formulas follow.
+- **Less empty space**:
+  - A blank line next to a table, a display formula or a code block collapses, since those blocks have their own spacing.
+  - A blank line between paragraphs stays: it is the paragraph spacing.
+  - The caret's line opens to full height, and the arrow keys stop on it.
+- **A one-line `$$…$$` formula** no longer takes three lines' height. It went from 84 px to about 35.
+- **Tables**: a `|` inside `$…$` no longer splits a cell, so `| $|B_m|/n$ |` keeps its table.
+- **`[text]`** is a link only when the document defines `[text]: url`, as in CommonMark and Obsidian. Before, `[0.8, 1.0]` or `[ฎีกา 1689/2518]` showed as an empty link with its brackets hidden.
+
 ## 0.4.8
 
 - **Image embeds** `![[name.png]]` render as images, as in Obsidian:
