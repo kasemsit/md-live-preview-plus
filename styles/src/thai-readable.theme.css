@@ -1,0 +1,204 @@
+/*
+ * Thai + English reading theme for Markdown Live Preview Editor.
+ * Typeface: Sarabun (embedded above by build_style.py), for Thai and Latin alike.
+ * Colours derive from the active VS Code theme, so it works in light and dark:
+ *   --ink    text colour          --accent  theme link colour
+ *   --rule   hairlines (ink 14%)  --tint    faint fills (ink 5%)
+ */
+body {
+	--ink: var(--vscode-editor-foreground, #24292f);
+	--accent: var(--vscode-textLink-foreground, #2f6feb);
+	--rule: color-mix(in srgb, var(--ink) 14%, transparent);
+	--tint: color-mix(in srgb, var(--ink) 5%, transparent);
+	--soft: color-mix(in srgb, var(--ink) 68%, transparent);
+
+	font-family: "Sarabun Embedded", "Sarabun", "TH Sarabun New", "Noto Sans Thai",
+		"Leelawadee UI", "Segoe UI", -apple-system, "Thonburi", system-ui, sans-serif;
+	font-size: 16.5px;
+	line-height: 1.8;
+	color: var(--ink);
+	background-color: var(--vscode-editor-background, #ffffff);
+	word-wrap: break-word;
+	font-feature-settings: "kern", "liga";
+	text-rendering: optimizeLegibility;
+}
+
+/* Blank lines already separate blocks in Markdown, so block margins stay small and
+   the blank lines themselves are shortened (an empty CodeMirror line is a lone <br>). */
+p { margin: 0; }
+.cm-line:has(> br:only-child) { line-height: 0.75; }
+
+/* ── Headings: weight and space carry the hierarchy; colour stays quiet ── */
+h1, h2, h3, h4, h5, h6 {
+	font-family: inherit;
+	font-weight: 700;
+	line-height: 1.35;
+	margin: 0.5em 0 0.15em;
+	letter-spacing: -0.005em;
+}
+h1 {
+	font-size: 1.95em;
+	margin-top: 0.2em;
+	padding-bottom: 0.2em;
+	border-bottom: 2px solid var(--rule);
+}
+h2 {
+	font-size: 1.45em;
+	padding-bottom: 0.2em;
+	border-bottom: 1px solid var(--rule);
+}
+h3 { font-size: 1.2em; color: var(--accent); }
+h4 { font-size: 1.05em; }
+h5, h6 { font-size: 1em; color: var(--soft); }
+
+strong, b { font-weight: 700; }
+em, i { font-style: italic; }
+
+a {
+	color: var(--accent);
+	text-decoration: none;
+	border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+a:hover { border-bottom-color: var(--accent); }
+
+mark {
+	background: color-mix(in srgb, #ffd43b 45%, transparent);
+	color: inherit;
+	padding: 0 0.15em;
+	border-radius: 3px;
+}
+
+/* ── Lists ── */
+ul, ol { padding-left: 1.6em; margin: 0; }
+li + li { margin-top: 0.1em; }
+li::marker { color: var(--soft); }
+
+/* ── Quotes: a card with an accent edge ── */
+blockquote {
+	margin: 0.2em 0;
+	padding: 0.6em 1.1em;
+	border-left: 3px solid var(--accent);
+	border-radius: 0 8px 8px 0;
+	background: color-mix(in srgb, var(--accent) 7%, transparent);
+	color: var(--ink);
+}
+blockquote > :last-child { margin-bottom: 0; }
+
+/* ── Code ── */
+code, kbd, samp {
+	font-family: var(--vscode-editor-font-family, "Ubuntu Mono", "DejaVu Sans Mono", Consolas, monospace);
+	font-size: 0.87em;
+}
+code {
+	background: var(--tint);
+	padding: 0.12em 0.4em;
+	border-radius: 5px;
+}
+pre {
+	background: var(--vscode-textCodeBlock-background, var(--tint));
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	padding: 0.9em 1.1em;
+	line-height: 1.55;
+	overflow-x: auto;
+}
+pre code { background: none; padding: 0; border-radius: 0; font-size: 0.86em; }
+kbd {
+	padding: 0.1em 0.45em;
+	border: 1px solid var(--rule);
+	border-bottom-width: 2px;
+	border-radius: 5px;
+	background: var(--tint);
+}
+
+/* ── Tables: hairlines, a tinted header, soft zebra ── */
+table {
+	border-collapse: collapse;
+	margin: 0.3em 0;
+	font-size: 0.95em;
+	line-height: 1.55;
+}
+table th, table td {
+	border: 1px solid var(--rule);
+	padding: 0.45em 0.8em;
+	vertical-align: top;
+}
+table th {
+	background: color-mix(in srgb, var(--ink) 7%, transparent);
+	font-weight: 700;
+	text-align: left;
+}
+table tr:nth-child(2n) { background: color-mix(in srgb, var(--ink) 2.5%, transparent); }
+
+hr {
+	border: 0;
+	height: 1px;
+	background: var(--rule);
+	margin: 0.8em 0;
+}
+
+img { max-width: 100%; border-radius: 6px; }
+
+/* ── Callouts (> [!type] Title), rendered by the patched extension ──
+   Each callout line carries .mlp-callout + a colour class; first/last lines round
+   the card. The colour is one RGB triple per family, used at different strengths. */
+.cm-line.mlp-callout { --co: 59, 130, 246; }
+.cm-line.mlp-co-cyan   { --co: 8, 145, 178; }
+.cm-line.mlp-co-green  { --co: 22, 163, 74; }
+.cm-line.mlp-co-yellow { --co: 202, 138, 4; }
+.cm-line.mlp-co-orange { --co: 234, 88, 12; }
+.cm-line.mlp-co-red    { --co: 220, 38, 38; }
+.cm-line.mlp-co-purple { --co: 147, 51, 234; }
+.cm-line.mlp-co-gray   { --co: 120, 120, 120; }
+
+.cm-line.mlp-line-quote.mlp-callout {
+	background: rgba(var(--co), 0.08) !important;
+	border-left: 3px solid rgb(var(--co)) !important;
+	border-radius: 0 !important;
+	padding-left: 1.1em !important;
+	padding-right: 1.1em !important;
+}
+.cm-line.mlp-line-quote.mlp-callout-first {
+	border-top-right-radius: 8px !important;
+	padding-top: 0.55em !important;
+	padding-bottom: 0.15em !important;
+}
+.cm-line.mlp-line-quote.mlp-callout-last {
+	border-bottom-right-radius: 8px !important;
+	padding-bottom: 0.55em !important;
+}
+.mlp-callout-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	margin-right: 0.35em;
+	color: rgb(var(--co));
+	vertical-align: -0.12em;
+}
+.mlp-callout-icon svg { width: 1.1em; height: 1.1em; flex: none; }
+.mlp-callout-title {
+	font-weight: 700;
+	color: rgb(var(--co));
+}
+
+/* A table inside a quote or callout. CodeMirror draws the table as a block placed
+   next to the quote's lines, so it takes its colour from the callout line just
+   before it, and continues the card (same bar, tint, inner padding). */
+.mlp-table-wrap.mlp-table-in-quote {
+	--co: 59, 130, 246;
+	border-left: 3px solid rgb(var(--co));
+	background: rgba(var(--co), 0.08);
+	margin: 0 !important;
+	padding: 0.35em 1.1em 0.7em;
+	box-sizing: border-box;
+	border-radius: 0 0 8px 0;
+}
+.cm-line.mlp-co-cyan + .mlp-block .mlp-table-in-quote { --co: 8, 145, 178; }
+.cm-line.mlp-co-green + .mlp-block .mlp-table-in-quote { --co: 22, 163, 74; }
+.cm-line.mlp-co-yellow + .mlp-block .mlp-table-in-quote { --co: 202, 138, 4; }
+.cm-line.mlp-co-orange + .mlp-block .mlp-table-in-quote { --co: 234, 88, 12; }
+.cm-line.mlp-co-red + .mlp-block .mlp-table-in-quote { --co: 220, 38, 38; }
+.cm-line.mlp-co-purple + .mlp-block .mlp-table-in-quote { --co: 147, 51, 234; }
+.cm-line.mlp-co-gray + .mlp-block .mlp-table-in-quote { --co: 120, 120, 120; }
+.mlp-table-in-quote table { margin: 0; background: var(--vscode-editor-background, #fff); }
+.cm-line.mlp-line-quote + .mlp-block:has(.mlp-table-in-quote) { margin-top: 0 !important; margin-bottom: 0 !important; padding-top: 0 !important; }
