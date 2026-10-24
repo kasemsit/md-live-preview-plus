@@ -2,6 +2,16 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
+## Unreleased
+
+- **Tracked changes from outside the editor.** When an open note changes on disk (Claude writing it, a git checkout, another program), the Live Preview shows what changed on the rendered page.
+  - Insertions are green and deletions are struck through in red, word by word, Thai included.
+  - Each change has ✓ (keep) and ✗ (undo it).
+  - A bar shows the count, with **Next**, **Accept all** and **Reject all**.
+  - Undoing is an ordinary edit, so it reaches the file and Ctrl+Z works.
+  - Your own typing, in the preview or in a text editor, is not marked.
+  - Turn it off with `mdLivePreview.plus.trackExternalChanges`.
+
 ## 0.4.9
 
 - **Text size**: Larger Text, Smaller Text and Reset Text Size in the right-click menu.
