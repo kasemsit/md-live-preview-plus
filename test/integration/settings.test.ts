@@ -38,7 +38,7 @@ suite('settings and views', () => {
 	});
 
 	test('contributes the outline and theme views into its own container', () => {
-		const extension = vscode.extensions.getExtension('t-shoot.markdown-live-preview-editor');
+		const extension = vscode.extensions.getExtension('local.markdown-live-preview-editor-claude');
 		assert.ok(extension);
 		const views = extension.packageJSON.contributes.views as Record<
 			string,
@@ -71,7 +71,7 @@ suite('settings and views', () => {
 
 /** The CSS files the style manager keeps, or `[]` before any exist. */
 async function listStyles(): Promise<string[]> {
-	const extension = vscode.extensions.getExtension('t-shoot.markdown-live-preview-editor');
+	const extension = vscode.extensions.getExtension('local.markdown-live-preview-editor-claude');
 	assert.ok(extension);
 	const dir = vscode.Uri.joinPath(extension.extensionUri, '..', 'mdlp-styles');
 	try {

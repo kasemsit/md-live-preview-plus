@@ -33,3 +33,6 @@ playwright-report/**
 playwright.config.ts
 tsconfig.test.json
 vitest.config.ts
+plus/**
+!plus/fonts/OFL.txt
+build/**

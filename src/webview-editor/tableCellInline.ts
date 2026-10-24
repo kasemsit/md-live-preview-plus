@@ -1,5 +1,6 @@
 import { parser as baseMarkdownParser, Table, TaskList, Strikethrough, Autolink } from '@lezer/markdown';
 import type { SyntaxNode, Tree } from '@lezer/common';
+import { withInlinePasses } from './plus/inlineExtras';
 
 // A table cell's content is plain text as far as CodeMirror is concerned — the
 // rich TableWidget builds its own DOM outside the editor, so the live-preview
@@ -117,6 +118,11 @@ function renderNode(parent: HTMLElement, node: SyntaxNode, src: string, hooks: C
 			return;
 		}
 		case 'Link': {
+			// plus: "[^1]" is a footnote reference; plus/footnotes.ts renders it.
+			if (src.slice(node.from, node.from + 2) === '[^') {
+				appendText(parent, src.slice(node.from, node.to));
+				return;
+			}
 			const { label, url, title } = readLinkParts(node, src);
 			const a = document.createElement('a');
 			a.className = 'mlp-link';
@@ -177,5 +183,6 @@ function inlineRoot(tree: Tree): SyntaxNode {
  */
 export function renderInlineInto(parent: HTMLElement, text: string, hooks: CellInlineHooks): void {
 	if (!text) return;
-	renderChildren(parent, inlineRoot(cellParser.parse(text)), text, hooks);
+	// plus: wikilinks and footnote references (see plus/inlineExtras.ts).
+	withInlinePasses(text, parent, (source) => renderChildren(parent, inlineRoot(cellParser.parse(source)), source, hooks));
 }

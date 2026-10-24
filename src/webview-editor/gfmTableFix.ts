@@ -1,4 +1,6 @@
-import { Table, TaskList, Strikethrough, Autolink, type BlockContext, type Line, type LeafBlock, type MarkdownExtension } from '@lezer/markdown';
+import { TaskList, Strikethrough, Autolink, type BlockContext, type Line, type LeafBlock, type MarkdownExtension } from '@lezer/markdown';
+import { PlusTable } from './plus/table';
+import { insideWikilink } from './plus/wikilinkSyntax';
 
 const delimiterLine = /^\|?(\s*:?-+:?\s*\|)+(\s*:?-+:?\s*)?$/;
 
@@ -19,9 +21,11 @@ function countCells(text: string, start: number): number {
 	let first = true;
 	let cellStart = -1;
 	let escaped = false;
+	// plus: a "|" inside [[note|label]] is part of the link (see plus/table.ts).
+	const inLink = insideWikilink(text);
 	for (let i = start; i < text.length; i++) {
 		const ch = text.charCodeAt(i);
-		if (ch === 0x7c /* '|' */ && !escaped) {
+		if (ch === 0x7c /* '|' */ && !escaped && !inLink(i)) {
 			if (!first || cellStart > -1) count++;
 			first = false;
 			cellStart = -1;
@@ -79,4 +83,5 @@ const fixIndentedTableInterrupt: MarkdownExtension = {
 	],
 };
 
-export const GFM: MarkdownExtension[] = [fixIndentedTableInterrupt, Table, TaskList, Strikethrough, Autolink];
+// plus: `PlusTable` replaces @lezer/markdown's `Table` (wikilink pipes, tables in quotes).
+export const GFM: MarkdownExtension[] = [fixIndentedTableInterrupt, PlusTable, TaskList, Strikethrough, Autolink];

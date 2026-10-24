@@ -12,6 +12,7 @@ import { renderInlineInto, type CellInlineHooks } from './tableCellInline';
 import { createCodeModeButton, createCopyCodeButton, createRenderModeButton } from './codeModeButton';
 import { insertRow, insertColumn, renderTableMarkdown, type TableEditModel } from './tableEdit';
 import { t } from '../shared/i18n';
+import { insideWikilink } from './plus/wikilinkSyntax';
 
 const HEADING_LINE_CLASS: Record<string, string> = {
 	ATXHeading1: 'mlp-line-h1',
@@ -39,7 +40,10 @@ export function alignedBlockRange(state: EditorState, from: number, to: number):
 	if (to !== toLine.to) return null;
 	const fromLine = state.doc.lineAt(from);
 	if (fromLine.from === from) return { from, to };
-	return /^[ \t]*$/.test(state.sliceDoc(fromLine.from, from)) ? { from: fromLine.from, to } : null;
+	// plus: blockquote markers count as indentation too, so a table inside a
+	// quote ("> | a | b |") renders; the table model keeps "> " as its indent
+	// and writes it back on every line it rebuilds.
+	return /^[ \t]*(?:>[ \t]*)*$/.test(state.sliceDoc(fromLine.from, from)) ? { from: fromLine.from, to } : null;
 }
 
 /**
@@ -85,7 +89,7 @@ export function resolveImageSrc(src: string, baseUri: string): string {
 // document's ImageWidget applies. Read through a getter rather than captured:
 // `setImageBaseUri` runs on the `init` message, potentially after this module
 // is first evaluated.
-const cellInlineHooks: CellInlineHooks = {
+export const cellInlineHooks: CellInlineHooks = {
 	resolveImageSrc: (src) => resolveImageSrc(src, imageBaseUri),
 };
 
@@ -528,7 +532,8 @@ class TableWidget extends WidgetType {
 		// top-right corner. The button can't hang off `.mlp-block` (the outer
 		// spacing wrapper) because that box is what CodeMirror measures.
 		const wrap = document.createElement('div');
-		wrap.className = 'mlp-table-wrap';
+		// plus: a table inside a blockquote/callout is framed by the theme.
+		wrap.className = />/.test(this.indent) ? 'mlp-table-wrap mlp-table-in-quote' : 'mlp-table-wrap';
 		wrap.dataset.mlpTableFrom = String(this.tableFrom);
 		// The button is a normal element *before* the table, not an overlay on top
 		// of it: floated over the corner it was easy to miss, and it had to be kept
@@ -1149,8 +1154,10 @@ export function readCellSpans(state: EditorState, rowNode: SyntaxNode): CellSpan
 	let cellStart = 0;
 	let escaped = false;
 	let index = 0;
+	// plus: a "|" inside [[note|label]] belongs to the link (see plus/table.ts).
+	const inLink = insideWikilink(text);
 	for (const ch of text) {
-		if (ch === '|' && !escaped) {
+		if (ch === '|' && !escaped && !inLink(index)) {
 			segments.push({ raw: cell, offset: cellStart });
 			cell = '';
 			index += ch.length;
@@ -1552,14 +1559,19 @@ function buildDecorations(view: EditorView): DecorationSet {
 						});
 						return;
 					}
-					case 'Blockquote':
-						addLineRange(node.from, node.to, (_n, first, last) => {
+					case 'Blockquote': {
+						// plus: lines a quoted table's block widget replaces must carry no
+						// line decoration (same reason as for list items above).
+						const replaced = blockReplacedLines(state, node.node);
+						addLineRange(node.from, node.to, (n, first, last) => {
+							if (replaced.has(n)) return '';
 							let cls = 'mlp-line-quote';
 							if (first) cls += ' mlp-line-quote-first';
 							if (last) cls += ' mlp-line-quote-last';
 							return cls;
 						});
 						return; // descend to hide the ">" marks
+					}
 					case 'ListMark': {
 						// Checked against this marker's own range, not the whole line: a
 						// list item's text can run long, and a caret editing that text
@@ -1664,6 +1676,11 @@ function buildDecorations(view: EditorView): DecorationSet {
 						return; // descend to hide the ``` fence marks
 					}
 					case 'Link': {
+						// plus: "[^1]" is a footnote reference, rendered by plus/footnotes.ts,
+						// and "[x]" inside "[[x]]" is part of a wikilink (plus/wikilinks.ts).
+						if (state.sliceDoc(node.from, node.from + 2) === '[^') return false;
+						const linkLine = doc.lineAt(node.from);
+						if (insideWikilink(linkLine.text)(node.from - linkLine.from)) return false;
 						const marks = node.node.getChildren('LinkMark');
 						if (marks.length < 2) return;
 						const labelFrom = marks[0].to;

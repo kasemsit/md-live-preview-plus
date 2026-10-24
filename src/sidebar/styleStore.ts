@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { StyleEntry } from '../shared/messages';
+import { seedPlusTheme } from '../editor/plus/themeSeed';
 
 const CONFIG_SECTION = 'mdLivePreview';
 const ENABLED_STYLES_KEY = 'enabledStyles';
@@ -75,6 +76,8 @@ export class StyleStore {
 	}
 
 	private async ensureSampleStyles(): Promise<void> {
+		// md-live-preview-plus: install/upgrade the bundled Thai theme (own version key).
+		await seedPlusTheme(this.context, this.stylesUri);
 		// Run the seed/migration once per samples version so we don't fight a user
 		// who deleted a sample, while still delivering new templates on upgrade.
 		if (this.context.globalState.get<number>(SAMPLES_VERSION_KEY, 0) >= SAMPLES_VERSION) {

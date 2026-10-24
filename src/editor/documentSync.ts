@@ -4,6 +4,7 @@ import { pickCodeTheme, tokenizeDocument } from './shikiHost';
 import { extensionForMimeType, generateImageFileName } from '../shared/imageAssets';
 import { resolveLinkTarget } from '../shared/linkTarget';
 import { isPathInside } from '../shared/pathContainment';
+import { handlePlusMessage, trackSession, takePendingJump } from './plus';
 
 /**
  * Largest `.drawio` file that will be read and parsed.
@@ -73,6 +74,9 @@ export class DocumentSyncSession {
 		this.disposables.push(
 			vscode.window.onDidChangeActiveColorTheme(() => this.scheduleRehighlight(true)),
 		);
+
+		// md-live-preview-plus: wikilinks need to find the editor a note opened in.
+		this.disposables.push(trackSession(this));
 	}
 
 	private post(message: HostToEditorMessage) {
@@ -80,6 +84,8 @@ export class DocumentSyncSession {
 	}
 
 	private handleMessage(message: EditorToHostMessage) {
+		// md-live-preview-plus: selection export, wikilinks, completion lists.
+		if (handlePlusMessage(this, (m) => this.post(m), message)) return;
 		switch (message.type) {
 			case 'ready':
 				this.sendInit();
@@ -254,6 +260,9 @@ export class DocumentSyncSession {
 			baseUri: `${this.webviewPanel.webview.asWebviewUri(docDir).toString()}/`,
 		});
 		this.lastAppliedVersion = this.document.version;
+		// md-live-preview-plus: a wikilink with an anchor opened this note.
+		const jump = takePendingJump(this.document.uri);
+		if (jump) setTimeout(() => this.jumpToLine(jump), 250);
 	}
 
 	private async applyEdit(changes: TextChange[], baseVersion: number) {
@@ -345,6 +354,11 @@ export class DocumentSyncSession {
 
 	jumpToLine(line: number): void {
 		this.post({ type: 'jumpToLine', line });
+	}
+
+	/** md-live-preview-plus: insert a new footnote at the caret. */
+	insertFootnote(): void {
+		this.post({ type: 'plusInsertFootnote' });
 	}
 
 	dispose() {

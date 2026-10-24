@@ -80,6 +80,11 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 		return session ? extractHeadings(session.getDocument().getText()) : undefined;
 	}
 
+	/** md-live-preview-plus: inserts a footnote in the active Live Preview panel, if any. */
+	insertFootnoteInActive(): void {
+		this.findActiveSession()?.insertFootnote();
+	}
+
 	/** Asks the currently active Markdown Live Preview panel to move its cursor to the given line. */
 	jumpToActiveHeading(line: number): void {
 		this.findActiveSession()?.jumpToLine(line);
@@ -95,6 +100,8 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 		const styleUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview-editor-theme.css'),
 		);
+		// md-live-preview-plus: callouts, footnotes, wikilinks, completion.
+		const plusStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'plus.css'));
 		// Mermaid ships as its own bundle, loaded only once a document actually
 		// contains a diagram (see webview-editor/mermaidLoader.ts). The webview
 		// can't build this URI itself — `asWebviewUri` is host-side API — so it's
@@ -114,9 +121,10 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 <html lang="${escapeAttribute(vscode.env.language)}">
 <head>
 	<meta charset="UTF-8" />
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};" />
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource}; font-src ${webview.cspSource} data:;" />
 	<link rel="stylesheet" href="${uiStyleUri}" />
 	<link rel="stylesheet" href="${styleUri}" />
+	<link rel="stylesheet" href="${plusStyleUri}" />
 	<title>Markdown Live Preview</title>
 </head>
 <body>

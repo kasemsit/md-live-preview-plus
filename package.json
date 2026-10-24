@@ -1,9 +1,9 @@
 {
-  "name": "markdown-live-preview-editor",
-  "displayName": "Markdown Live Preview Editor",
-  "description": "Edit the preview itself, Obsidian-style — with Mermaid and draw.io diagrams rendered inline. The only VS Code Markdown editor that draws .drawio files.",
-  "version": "0.4.0",
-  "publisher": "t-shoot",
+  "name": "markdown-live-preview-editor-claude",
+  "displayName": "Markdown Live Preview Editor (Plus)",
+  "description": "md-live-preview-plus: wikilinks with completion, callouts, footnotes, tables in quotes, and Claude Code sees the selected text. Edit the preview itself, Obsidian-style — with Mermaid and draw.io diagrams rendered inline. The only VS Code Markdown editor that draws .drawio files.",
+  "version": "0.4.3",
+  "publisher": "local",
   "license": "MIT",
   "icon": "media/icon-128.png",
   "keywords": [
@@ -41,12 +41,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/t-shoot/md-live-preview-editor.git"
+    "url": "https://github.com/kasemsit/md-live-preview-plus.git"
   },
   "bugs": {
-    "url": "https://github.com/t-shoot/md-live-preview-editor/issues"
+    "url": "https://github.com/kasemsit/md-live-preview-plus/issues"
   },
-  "homepage": "https://github.com/t-shoot/md-live-preview-editor#readme",
+  "homepage": "https://github.com/kasemsit/md-live-preview-plus#readme",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -115,6 +115,11 @@
         "title": "%command.newStyle%",
         "category": "Markdown Live Preview",
         "icon": "$(add)"
+      },
+      {
+        "command": "mdLivePreview.plus.insertFootnote",
+        "title": "Insert Footnote",
+        "category": "Markdown Live Preview"
       }
     ],
     "menus": {
@@ -183,9 +188,27 @@
           ],
           "default": "prompt",
           "description": "%config.defaultEditor%"
+        },
+        "mdLivePreview.plus.shareSelectionWithClaude": {
+          "type": "boolean",
+          "default": true,
+          "description": "md-live-preview-plus: write the text selected in the Live Preview to ~/.claude/live-preview-selection.json (only if ~/.claude exists), where the bundled Claude Code hook passes it to Claude."
+        },
+        "mdLivePreview.plus.checkForUpdates": {
+          "type": "boolean",
+          "default": true,
+          "description": "md-live-preview-plus: once a day, check GitHub Releases (api.github.com) for a newer version and offer the download page."
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "mdLivePreview.plus.insertFootnote",
+        "key": "ctrl+alt+6",
+        "mac": "cmd+alt+6",
+        "when": "activeCustomEditorId == mdLivePreview.editor"
+      }
+    ]
   },
   "scripts": {
     "compile": "node esbuild.js && tsc --noEmit -p tsconfig.json",

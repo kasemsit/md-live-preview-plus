@@ -33,7 +33,8 @@ export type HostToEditorMessage =
 	// matches the reply to the widget that asked, since several diagrams in one
 	// document can have requests in flight at the same time.
 	| { type: 'drawioFile'; requestId: number; text?: string; error?: string }
-	| { type: 'setCursor'; pos: number };
+	| { type: 'setCursor'; pos: number }
+	| PlusHostToEditorMessage;
 
 export type EditorToHostMessage =
 	| { type: 'ready' }
@@ -46,7 +47,38 @@ export type EditorToHostMessage =
 	// itself, and an <img> cannot render mxGraph XML, so the host reads the file
 	// and sends its text back for the widget to parse. `src` is the raw, relative
 	// path exactly as written in the Markdown; the host resolves it.
-	| { type: 'readDrawioFile'; requestId: number; src: string };
+	| { type: 'readDrawioFile'; requestId: number; src: string }
+	| PlusEditorToHostMessage;
+
+// ── md-live-preview-plus ────────────────────────────────────────────────────
+
+/** A note offered by wikilink completion: `name` is the file name without extension, `path` workspace-relative. */
+export interface PlusNote {
+	name: string;
+	path: string;
+}
+
+/** A link target inside a note: a heading (`#Heading`) or a block id (`#^id`). */
+export interface PlusAnchor {
+	kind: 'heading' | 'block';
+	/** Heading text, or the block id without its `^`. */
+	text: string;
+	level?: number;
+}
+
+export type PlusHostToEditorMessage =
+	| { type: 'plusNotes'; requestId: number; notes: PlusNote[] }
+	| { type: 'plusAnchors'; requestId: number; anchors: PlusAnchor[] }
+	| { type: 'plusInsertFootnote' };
+
+export type PlusEditorToHostMessage =
+	// The editor selection, as exact Markdown source with its line numbers;
+	// `text` is empty when nothing is selected. Written to a file a Claude Code
+	// hook reads (see src/editor/plus/selectionFile.ts).
+	| { type: 'plusSelection'; text: string; from?: number; to?: number; startLine?: number; endLine?: number }
+	| { type: 'plusListNotes'; requestId: number }
+	// `target` is the wikilink target before `#`; empty means the current document.
+	| { type: 'plusListAnchors'; requestId: number; target: string };
 
 export interface StyleEntry {
 	id: string;

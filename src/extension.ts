@@ -4,6 +4,7 @@ import { StyleManagerViewProvider } from './sidebar/StyleManagerViewProvider';
 import { StyleStore } from './sidebar/styleStore';
 import { OutlineViewProvider } from './sidebar/OutlineViewProvider';
 import { setGrammarRoot } from './editor/shikiHost';
+import { checkForUpdate } from './editor/plus/updateCheck';
 
 function getActiveMarkdownUri(): vscode.Uri | undefined {
 	if (vscode.window.activeTextEditor?.document.languageId === 'markdown') {
@@ -181,7 +182,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand('mdLivePreview.newStyle', async () => {
 			await styleManagerProvider.createNewStyle();
 		}),
+		vscode.commands.registerCommand('mdLivePreview.plus.insertFootnote', () => provider.insertFootnoteInActive()),
 	);
+
+	// md-live-preview-plus: not on the Marketplace, so it checks GitHub Releases itself.
+	void checkForUpdate(context);
 
 	context.subscriptions.push(
 		vscode.workspace.onDidCloseTextDocument((doc) => {

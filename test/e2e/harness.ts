@@ -42,6 +42,7 @@ export async function mountEditor(page: Page, text: string, locale = 'en'): Prom
 	const script = readFileSync(join(ROOT, 'dist', 'webview-editor.js'), 'utf8');
 	const style = readFileSync(join(ROOT, 'media', 'webview-editor-theme.css'), 'utf8');
 	const uiStyle = readFileSync(join(ROOT, 'media', 'webview-ui.css'), 'utf8');
+	const plusStyle = readFileSync(join(ROOT, 'media', 'plus.css'), 'utf8');
 
 	// The Mermaid bundle is fetched lazily by URI, and the AWS shape table by
 	// `fetch`. Serving both from the page's own origin lets the diagram widgets
@@ -84,6 +85,7 @@ html, body { margin: 0; height: 100%; background: var(--vscode-editor-background
 #mlp-root { height: 100%; }
 ${uiStyle}
 ${style}
+${plusStyle}
 </style>
 </head>
 <body>

@@ -1,0 +1,140 @@
+/*
+ * Thai + English reading theme for Markdown Live Preview Editor.
+ * Typeface: Sarabun (embedded above by build_style.py), for Thai and Latin alike.
+ * Colours derive from the active VS Code theme, so it works in light and dark:
+ *   --ink    text colour          --accent  theme link colour
+ *   --rule   hairlines (ink 14%)  --tint    faint fills (ink 5%)
+ */
+body {
+	--ink: var(--vscode-editor-foreground, #24292f);
+	--accent: var(--vscode-textLink-foreground, #2f6feb);
+	--rule: color-mix(in srgb, var(--ink) 14%, transparent);
+	--tint: color-mix(in srgb, var(--ink) 5%, transparent);
+	--soft: color-mix(in srgb, var(--ink) 68%, transparent);
+
+	font-family: "Sarabun Embedded", "Sarabun", "TH Sarabun New", "Noto Sans Thai",
+		"Leelawadee UI", "Segoe UI", -apple-system, "Thonburi", system-ui, sans-serif;
+	font-size: 16.5px;
+	line-height: 1.8;
+	color: var(--ink);
+	background-color: var(--vscode-editor-background, #ffffff);
+	word-wrap: break-word;
+	font-feature-settings: "kern", "liga";
+	text-rendering: optimizeLegibility;
+}
+
+/* Blank lines already separate blocks in Markdown, so block margins stay small and
+   the blank lines themselves are shortened (an empty CodeMirror line is a lone <br>). */
+p { margin: 0; }
+.cm-line:has(> br:only-child) { line-height: 0.75; }
+
+/* ── Headings: weight and space carry the hierarchy; colour stays quiet ── */
+h1, h2, h3, h4, h5, h6 {
+	font-family: inherit;
+	font-weight: 700;
+	line-height: 1.35;
+	margin: 0.5em 0 0.15em;
+	letter-spacing: -0.005em;
+}
+h1 {
+	font-size: 1.95em;
+	margin-top: 0.2em;
+	padding-bottom: 0.2em;
+	border-bottom: 2px solid var(--rule);
+}
+h2 {
+	font-size: 1.45em;
+	padding-bottom: 0.2em;
+	border-bottom: 1px solid var(--rule);
+}
+h3 { font-size: 1.2em; color: var(--accent); }
+h4 { font-size: 1.05em; }
+h5, h6 { font-size: 1em; color: var(--soft); }
+
+strong, b { font-weight: 700; }
+em, i { font-style: italic; }
+
+a {
+	color: var(--accent);
+	text-decoration: none;
+	border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+a:hover { border-bottom-color: var(--accent); }
+
+mark {
+	background: color-mix(in srgb, #ffd43b 45%, transparent);
+	color: inherit;
+	padding: 0 0.15em;
+	border-radius: 3px;
+}
+
+/* ── Lists ── */
+ul, ol { padding-left: 1.6em; margin: 0; }
+li + li { margin-top: 0.1em; }
+li::marker { color: var(--soft); }
+
+/* ── Quotes: a card with an accent edge ── */
+blockquote {
+	margin: 0.2em 0;
+	padding: 0.6em 1.1em;
+	border-left: 3px solid var(--accent);
+	border-radius: 0 8px 8px 0;
+	background: color-mix(in srgb, var(--accent) 7%, transparent);
+	color: var(--ink);
+}
+blockquote > :last-child { margin-bottom: 0; }
+
+/* ── Code ── */
+code, kbd, samp {
+	font-family: var(--vscode-editor-font-family, "Ubuntu Mono", "DejaVu Sans Mono", Consolas, monospace);
+	font-size: 0.87em;
+}
+code {
+	background: var(--tint);
+	padding: 0.12em 0.4em;
+	border-radius: 5px;
+}
+pre {
+	background: var(--vscode-textCodeBlock-background, var(--tint));
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	padding: 0.9em 1.1em;
+	line-height: 1.55;
+	overflow-x: auto;
+}
+pre code { background: none; padding: 0; border-radius: 0; font-size: 0.86em; }
+kbd {
+	padding: 0.1em 0.45em;
+	border: 1px solid var(--rule);
+	border-bottom-width: 2px;
+	border-radius: 5px;
+	background: var(--tint);
+}
+
+/* ── Tables: hairlines, a tinted header, soft zebra ── */
+table {
+	border-collapse: collapse;
+	margin: 0.3em 0;
+	font-size: 0.95em;
+	line-height: 1.55;
+}
+table th, table td {
+	border: 1px solid var(--rule);
+	padding: 0.45em 0.8em;
+	vertical-align: top;
+}
+table th {
+	background: color-mix(in srgb, var(--ink) 7%, transparent);
+	font-weight: 700;
+	text-align: left;
+}
+table tr:nth-child(2n) { background: color-mix(in srgb, var(--ink) 2.5%, transparent); }
+
+hr {
+	border: 0;
+	height: 1px;
+	background: var(--rule);
+	margin: 0.8em 0;
+}
+
+img { max-width: 100%; border-radius: 6px; }

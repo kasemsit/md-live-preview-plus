@@ -30,6 +30,7 @@ import {
 import { t } from '../shared/i18n';
 import { adaptMarkdownCss } from '../shared/cssAdapter';
 import type { TextChange } from '../shared/messages';
+import { plusExtensions, handlePlusHostMessage } from './plus';
 
 const remoteChange = Annotation.define<boolean>();
 const FLUSH_DEBOUNCE_MS = 250;
@@ -90,6 +91,8 @@ function createExtensions(): Extension[] {
 		headingSpaceInputHandler,
 		backtickInputHandler,
 		livePreviewPlugin,
+		// md-live-preview-plus: wikilinks, callouts, footnotes, completion, selection export.
+		...plusExtensions(postToHost),
 		blockDecorationsField,
 		codeHighlightExtension,
 		createLinkClickHandler((href) => postToHost({ type: 'openLink', href })),
@@ -221,6 +224,7 @@ onHostMessage((message) => {
 	// `drawioFile` replies are routed to whichever widget requested them, not
 	// handled by the switch below.
 	if (handleDrawioFileMessage(message)) return;
+	if (handlePlusHostMessage(view, message)) return;
 	switch (message.type) {
 		case 'init':
 			baseVersion = message.version;

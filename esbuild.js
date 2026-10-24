@@ -145,6 +145,8 @@ async function buildAwsShapes() {
 async function main() {
 	await buildShikiLangs();
 	await buildAwsShapes();
+	// md-live-preview-plus: the bundled Thai theme, fonts embedded.
+	require('./plus/build-theme.js').buildTheme();
 
 	const configs = [
 		extensionConfig,

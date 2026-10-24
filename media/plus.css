@@ -1,0 +1,140 @@
+/* md-live-preview-plus — styles for what this fork adds. Loaded after
+   webview-editor-theme.css, whichever CSS theme the user has enabled. */
+
+/* The selection layer sits above the text (see webview-editor-theme.css); a
+   theme whose selection colour is opaque hid the selected text under it. */
+.cm-layer.cm-selectionLayer .cm-selectionBackground {
+	opacity: 0.4 !important;
+}
+
+/* ── Wikilinks ── */
+.mlp-wikilink { cursor: pointer; }
+
+/* ── Block ids (… ^ma-32): a link target, not prose ── */
+.mlp-block-id { opacity: 0.4; font-size: 0.85em; }
+
+/* ── Callouts (> [!type] Title), rendered by plus/callouts.ts ──
+   Each callout line carries .mlp-callout + a colour class; first/last lines round
+   the card. The colour is one RGB triple per family, used at different strengths. */
+.cm-line.mlp-callout { --co: 59, 130, 246; }
+.cm-line.mlp-co-cyan   { --co: 8, 145, 178; }
+.cm-line.mlp-co-green  { --co: 22, 163, 74; }
+.cm-line.mlp-co-yellow { --co: 202, 138, 4; }
+.cm-line.mlp-co-orange { --co: 234, 88, 12; }
+.cm-line.mlp-co-red    { --co: 220, 38, 38; }
+.cm-line.mlp-co-purple { --co: 147, 51, 234; }
+.cm-line.mlp-co-gray   { --co: 120, 120, 120; }
+
+.cm-line.mlp-line-quote.mlp-callout {
+	background: rgba(var(--co), 0.08) !important;
+	border-left: 3px solid rgb(var(--co)) !important;
+	border-radius: 0 !important;
+	padding-left: 1.1em !important;
+	padding-right: 1.1em !important;
+}
+.cm-line.mlp-line-quote.mlp-callout-first {
+	border-top-right-radius: 8px !important;
+	padding-top: 0.55em !important;
+	padding-bottom: 0.15em !important;
+}
+.cm-line.mlp-line-quote.mlp-callout-last {
+	border-bottom-right-radius: 8px !important;
+	padding-bottom: 0.55em !important;
+}
+.mlp-callout-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	margin-right: 0.35em;
+	color: rgb(var(--co));
+	vertical-align: -0.12em;
+}
+.mlp-callout-icon svg { width: 1.1em; height: 1.1em; flex: none; }
+.mlp-callout-title {
+	font-weight: 700;
+	color: rgb(var(--co));
+}
+
+/* A table inside a quote or callout. CodeMirror draws the table as a block
+   placed between the quote's lines, so the frame continues the quote around it:
+   the plain quote's bar and tint, or — after a callout line — the callout's colour
+   (taken from that line, since a block cannot inherit from its sibling). */
+.mlp-table-wrap.mlp-table-in-quote {
+	background: var(--vscode-textBlockQuote-background, rgba(127, 127, 127, 0.05));
+	border-left: 3px solid var(--vscode-textBlockQuote-border, rgba(127, 127, 127, 0.5));
+	margin: 0 !important;
+	padding: 0.35em 1em 0.7em;
+	box-sizing: border-box;
+}
+.cm-line.mlp-callout + .mlp-block .mlp-table-in-quote {
+	--co: 59, 130, 246;
+	background: rgba(var(--co), 0.08);
+	border-left-color: rgb(var(--co));
+	padding-left: 1.1em;
+	padding-right: 1.1em;
+	border-radius: 0 0 8px 0;
+}
+.cm-line.mlp-co-cyan + .mlp-block .mlp-table-in-quote { --co: 8, 145, 178; }
+.cm-line.mlp-co-green + .mlp-block .mlp-table-in-quote { --co: 22, 163, 74; }
+.cm-line.mlp-co-yellow + .mlp-block .mlp-table-in-quote { --co: 202, 138, 4; }
+.cm-line.mlp-co-orange + .mlp-block .mlp-table-in-quote { --co: 234, 88, 12; }
+.cm-line.mlp-co-red + .mlp-block .mlp-table-in-quote { --co: 220, 38, 38; }
+.cm-line.mlp-co-purple + .mlp-block .mlp-table-in-quote { --co: 147, 51, 234; }
+.cm-line.mlp-co-gray + .mlp-block .mlp-table-in-quote { --co: 120, 120, 120; }
+/* More of the quote follows the table: no gap, no closing corner. */
+.mlp-block:has(+ .cm-line.mlp-line-quote) .mlp-table-in-quote { border-radius: 0; }
+.mlp-table-in-quote table { margin: 0; background: var(--vscode-editor-background, #fff); }
+.cm-line.mlp-line-quote + .mlp-block:has(.mlp-table-in-quote) {
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+	padding-top: 0 !important;
+}
+.mlp-block:has(.mlp-table-in-quote):has(+ .cm-line.mlp-line-quote) { padding-bottom: 0 !important; }
+
+/* ── Footnotes: superscript references with a hover card, numbered
+   definitions with a back-link, and a brief flash on the jump target. ── */
+.mlp-fn { position: relative; }
+.mlp-fn-ref {
+	color: var(--vscode-textLink-foreground, #2f6feb);
+	cursor: pointer; font-weight: 600; font-size: 0.72em; padding: 0 0.12em;
+}
+.mlp-fn-ref:hover { text-decoration: underline; }
+.mlp-fn-pop {
+	display: block; visibility: hidden; position: fixed; left: 0; top: 0; z-index: 1000;
+	width: max-content; max-width: min(32em, calc(100vw - 16px)); white-space: normal; text-indent: 0;
+	padding: 0.55em 0.8em; border-radius: 8px; font-size: 0.86em; line-height: 1.55; font-weight: 400;
+	color: var(--vscode-editorHoverWidget-foreground, var(--vscode-editor-foreground, #24292f));
+	background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background, #ffffff));
+	border: 1px solid var(--vscode-editorHoverWidget-border, rgba(128,128,128,0.35));
+	box-shadow: 0 6px 20px rgba(0,0,0,0.20);
+	pointer-events: none;
+}
+.mlp-fn.mlp-fn-open .mlp-fn-pop { visibility: visible; }
+.cm-line.mlp-fn-def { font-size: 0.88em; line-height: 1.55; padding-left: 2.2em !important; text-indent: -2.2em; }
+.cm-line.mlp-fn-def-first { border-top: 1px solid rgba(128,128,128,0.35); margin-top: 1.2em; padding-top: 0.8em !important; }
+.mlp-fn-def-num { display: inline-block; min-width: 2.2em; text-indent: 0; font-weight: 600; opacity: 0.85; }
+.mlp-fn-back { margin-left: 0.25em; cursor: pointer; color: var(--vscode-textLink-foreground, #2f6feb); font-weight: 400; }
+.mlp-fn-flashbox { position: absolute; left: 0; right: 0; pointer-events: none; z-index: 3;
+	background: rgba(255, 196, 0, 0.30); border-radius: 4px; animation: mlp-fn-fade 1.5s ease-out forwards; }
+@keyframes mlp-fn-fade { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ── Completion ([[note, [[note#heading, [^label) in VS Code's suggest-widget colours ── */
+.cm-tooltip.cm-tooltip-autocomplete {
+	background: var(--vscode-editorSuggestWidget-background, var(--vscode-editorWidget-background, #252526));
+	color: var(--vscode-editorSuggestWidget-foreground, var(--vscode-editor-foreground, #d4d4d4));
+	border: 1px solid var(--vscode-editorSuggestWidget-border, var(--vscode-editorWidget-border, #454545));
+	border-radius: 4px;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul { font-family: inherit; max-height: 16em; }
+.cm-tooltip.cm-tooltip-autocomplete > ul > li { padding: 2px 8px; }
+.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
+	background: var(--vscode-editorSuggestWidget-selectedBackground, var(--vscode-list-activeSelectionBackground, #04395e));
+	color: var(--vscode-editorSuggestWidget-selectedForeground, var(--vscode-list-activeSelectionForeground, #ffffff));
+}
+.cm-completionMatchedText {
+	text-decoration: none;
+	font-weight: 600;
+	color: var(--vscode-editorSuggestWidget-highlightForeground, #2aaaff);
+}
+.cm-completionDetail { margin-left: 0.8em; font-style: normal; opacity: 0.6; }

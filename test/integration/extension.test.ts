@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
-const EXTENSION_ID = 't-shoot.markdown-live-preview-editor';
+const EXTENSION_ID = 'local.markdown-live-preview-editor-claude';
 
 /**
  * What a unit test cannot see.

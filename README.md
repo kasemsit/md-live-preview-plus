@@ -1,392 +1,120 @@
-# Markdown Live Preview Editor
+# md-live-preview-plus
 
-[日本語](#日本語) | English
+A fork of [Markdown Live Preview Editor](https://github.com/t-shoot/md-live-preview-editor)
+by t-shoot, for notes written the Obsidian way, with a bridge to Claude Code. It is
+independent: it is affiliated with neither t-shoot nor Obsidian.
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/t-shoot.markdown-live-preview-editor?label=Marketplace)](https://marketplace.visualstudio.com/items?itemName=t-shoot.markdown-live-preview-editor)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/t-shoot.markdown-live-preview-editor)](https://marketplace.visualstudio.com/items?itemName=t-shoot.markdown-live-preview-editor)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/t-shoot.markdown-live-preview-editor)](https://marketplace.visualstudio.com/items?itemName=t-shoot.markdown-live-preview-editor)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Everything upstream does still works: editing in the rendered preview, Mermaid and
+draw.io diagrams, editable tables, CSS themes. See [README.upstream.md](README.upstream.md).
+This fork adds:
 
-![Live preview rendering syntax highlighting and a Mermaid diagram in place](media/screenshots/code-and-mermaid.png)
+- **Wikilinks**: `[[note]]`, `[[note#Heading]]` and `[[note#^block-id|label]]` render as links.
+  - A click opens the note in Live Preview at the heading or block.
+  - Notes are found by name anywhere in the workspace, as in Obsidian.
+  - Links work in table cells, with `\|` or a bare `|` before the label.
+- **Completion**:
+  - `[[` offers the notes in the workspace.
+  - `[[note#` offers that note's headings, and `[[note#^` its block ids.
+  - `[^` offers the existing footnotes, plus *new footnote*.
+- **Callouts**: `> [!note]`, `> [!warning] Title` and the other Obsidian types render as coloured cards with an icon.
+- **Tables inside quotes and callouts** render as tables, even when the table follows a line of text directly.
+- **Footnotes**: `[^1]` renders as a superscript number numbered by first citation.
+  - Hover over the number to read the note. Click it to jump to the definition, and click `↩` to jump back.
+  - **Insert Footnote** (`Ctrl+Alt+6`, or `Cmd+Alt+6` on macOS) adds the next number at the cursor and its definition at the end of the file.
+- **Block ids** (`… ^ma-32`) are dimmed rather than shown at full strength.
+- **Claude Code sees your selection**: the exact Markdown source, its line numbers and the file path. A webview's selection is otherwise invisible to VS Code and to Claude.
+  - The file is saved when you select, so the line numbers match the file on disk.
+- **A readable selection highlight**: the selection band no longer hides the text.
+- **A Thai/English reading theme**: Sarabun is embedded, so no font needs installing.
 
-**A Visual Studio Code extension that lets you edit the Markdown preview itself, Obsidian-style.**
-Your file keeps its formatted look while you type, but what's actually saved to disk is always plain Markdown.
-**Mermaid and draw.io diagrams** are drawn in place, from the text you write in a fenced code block.
+![Sample note rendered with the Thai/English theme](plus/preview/sample.png)
 
-It is, as far as we know, **the only VS Code Markdown editor that renders `.drawio` files** — including
-AWS architecture shapes — without the draw.io application.
+**Get it from [Releases](../../releases), not from the VS Code Marketplace.** This fork is not
+published there, on purpose: the Marketplace extension is t-shoot's own. It has its own id,
+`local.markdown-live-preview-editor-claude`, so it never collides with upstream. It checks
+GitHub once a day and tells you when a newer release is out.
 
-## Why this extension?
+## Install (Windows, macOS, Linux)
 
-VS Code's built-in Markdown preview splits the editing source pane and the preview pane side by side.
-This extension merges the two into one.
+Download `md-live-preview-plus.zip` from [Releases](../../releases), unzip it, and run the
+installer from that folder:
 
-- The preview itself is editable — type directly into the **styled** view
-- Only the line the cursor is on reveals its raw Markdown syntax (`**`, `#`, etc.) — the same experience as Obsidian
-- What's saved to the file on disk is always **plain Markdown**. No proprietary format
-- Works with your existing `.md` files and Git-tracked documents as-is
+- **Windows:** `powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`
+- **macOS / Linux:** `./install.sh` (needs `python3`)
 
-## Key features
+The installer does three things:
+1. It removes t-shoot's original extension if present, because both register the same editor. Then it installs the `.vsix`.
+2. It copies the Claude Code hook to `~/.claude/hooks/`, or `%USERPROFILE%\.claude\hooks\` on Windows.
+3. It registers the hook in Claude Code's `settings.json`, keeping your other settings. Running it twice is harmless.
 
-### Live preview editing
-A custom editor built on CodeMirror 6. Headings, emphasis, blockquotes, lists, task lists, links, images, horizontal rules, tables, and more automatically switch between their styled rendering and raw source depending on where your cursor is. `Ctrl+Z` / `Ctrl+Shift+Z` undo/redo work exactly as you'd expect in a normal editor.
+Next:
+1. Reload VS Code (*Developer: Reload Window*).
+2. Start a new Claude Code session.
+3. Open a `.md` file with *Open With → Markdown Live Preview*.
 
-![Editing directly in the styled preview](media/screenshots/live-preview-editing.png)
+To check that the bridge works, select some text and ask Claude what you selected.
 
-### Bold / italic shortcuts
-`Ctrl+B` toggles the selection between plain text and `**bold**`; `Ctrl+I` does the same for `*italic*`. Works with no selection too (inserts an empty pair and places the cursor inside) and with multiple cursors at once.
+Only want the extension, without the Claude bridge? Install the `.vsix` on its own:
+`code --install-extension markdown-live-preview-editor-claude-<version>.vsix`.
 
-### Search and replace
-`Ctrl+F` opens a Find panel that floats over the top-right of the editor, the way VS Code's own does. Replace is behind the chevron on its left, so the common case stays compact. `Enter` and `F3` step through matches, `Ctrl+D` selects the next occurrence as an extra cursor, and `Esc` closes the panel. Case sensitivity, whole-word and regular-expression modes are all there.
-
-Search runs against the **raw Markdown** — the text the file actually holds — so `](url)`, a table's pipes and a heading's `#` are all findable even while the preview is hiding them. A match landing inside hidden syntax reveals that syntax, so you can always see what was found.
-
-### Paste and drag-and-drop images
-Paste an image from your clipboard (e.g. a screenshot) or drag an image file onto the editor, and it's saved into an `assets/` folder next to the `.md` file, with a `![](assets/...)` link inserted at the cursor automatically. File names are generated to avoid collisions.
-
-### Outline (heading list) view
-A dedicated "Outline" view in the activity bar lists every heading (h1–h6) in the active Markdown Live Preview document. Click a heading to jump straight to it. The list follows whichever document tab is active and updates as you edit. (VS Code's built-in Outline panel doesn't support webview-based custom editors, so this extension ships its own.)
-
-### Syntax-highlighted code blocks
-Fenced code blocks (` ```python `, etc.) are colorized per-language via [Shiki](https://shiki.style/). An `auto` mode follows VS Code's color theme (light/dark), or you can pin a specific palette like GitHub's.
-
-Use a `diff` code fence to display supplied changes: `+` lines are green, `-` lines are red, and `@@` lines are blue. File headers (`+++` / `---`) are bold. This only colors the text; it does not calculate differences.
-
-### Mermaid diagrams
-` ```mermaid ` fences render as an SVG diagram in place. A toolbar above the diagram provides `</>` to edit the Mermaid source and a button to expand the view. The expanded view includes zoom controls (drag to pan, `Ctrl`/`⌘`+wheel to zoom) and a reset button to return to the fitted view. Clicking the diagram itself pans it rather than switching to source, so a stray click can't interrupt what you're looking at.
-
-### Editable tables
-A table renders as a real table and stays that way while you work in it: click a cell to edit that cell in place, `Tab`/`Shift+Tab` to move between cells, `Enter` to commit, `Esc` to discard. Only the edited cell is written back, so the rest of the row's spacing and pipes are left untouched. Dragging across cells selects their text to copy. Thin strips along the table's bottom and right edges add a row or a column. The `</>` button above the table opens the raw Markdown, for the things these can't reach — removing a row, changing the alignment row, repairing a broken table.
-
-### Clickable links
-Clicking a rendered link follows it. A link to a `.md` file or any other file in the workspace is resolved against the document's own folder and opened in the editor, so links between notes work; `https:`, `mailto:` and other schemes are handed to the OS. If the target doesn't exist, you get a message naming the path.
-
-### Sidebar CSS theme manager, live-synced while editing
-The "CSS Themes" view in the Primary Sidebar lets you register and switch between multiple CSS snippets that restyle the preview. Saving a CSS file hot-reloads any open preview.
-
-![Choosing a CSS theme from cards in the sidebar](media/screenshots/css-theme-sidebar.png)
-
-Opening a card's edit (pencil) icon shows the CSS file and a sample live preview side by side. **The preview updates on every keystroke**, and whichever rule your cursor sits on (e.g. `h1 { ... }`) glows briefly on the matching preview element, so you can see exactly what a rule affects while you write it.
-
-![Placing the cursor on an h1 rule glows the matching heading in the preview](media/screenshots/css-highlight-sync.png)
-
-## Installation
-
-1. Search for "Markdown Live Preview Editor" in VS Code's Extensions view and install it
-2. Or from the Marketplace page: [Markdown Live Preview Editor](https://marketplace.visualstudio.com/items?itemName=t-shoot.markdown-live-preview-editor)
-3. Or from the command line:
-   ```
-   code --install-extension t-shoot.markdown-live-preview-editor
-   ```
-
-## Quick start
-
-1. Open a `.md` file (it opens in the normal text editor by default).
-2. Click the toggle icon at the top right of the editor title bar to switch to Live Preview.
-3. Edit directly in the preview. Lines without the cursor show their styled rendering; the line with the cursor shows raw Markdown syntax.
-4. Enable a theme from the "CSS Themes" view in the Primary Sidebar if you like.
-5. Open the "Outline" view in the Primary Sidebar to jump between headings.
-
-To always open `.md` files in Live Preview, change the `mdLivePreview.defaultEditor` setting to `livePreview`.
+The reading theme `thai-readable.css` ships inside the `.vsix`. On first run it is added to
+the **CSS Themes** view and switched on, unless you have already chosen another theme.
+Later releases update it.
 
 ## Settings
 
-| Setting | Description |
-| --- | --- |
-| `mdLivePreview.codeTheme` | Code highlighting palette (`auto` / `dark-plus` / `light-plus` / `github-dark` / `github-light`). `auto` follows VS Code's color theme (light/dark). |
-| `mdLivePreview.enabledStyles` | The list of currently enabled CSS snippet IDs (normally managed from the sidebar, not edited directly). |
-| `mdLivePreview.defaultEditor` | Controls whether `.md` files default to Markdown Live Preview (`prompt` = keep the normal editor and open Live Preview manually from the toolbar / `livePreview` = always use Live Preview / `default` = always use VS Code's normal text editor). |
+| setting | default | what it does |
+|---|---|---|
+| `mdLivePreview.plus.shareSelectionWithClaude` | `true` | Writes the selection to `~/.claude/live-preview-selection.json`, only if `~/.claude` exists. |
+| `mdLivePreview.plus.checkForUpdates` | `true` | Once a day, asks `api.github.com` for the latest release. |
 
-## Known limitations
+The keybinding for **Insert Footnote** can be changed in *Keyboard Shortcuts*. Search for
+`mdLivePreview.plus.insertFootnote`.
 
-- Code highlighting is limited to a curated set of major languages (JS/TS/Python/Java/C/C++/C#/Go/Rust/Ruby/PHP/HTML/CSS/JSON/YAML/Markdown/Bash/SQL/Kotlin/Swift, etc.). Other languages aren't colorized.
-- Table editing covers cell contents, plus adding a row or column. Other structural changes — removing rows and columns, reordering them, changing column alignment — are made in the raw Markdown, reached via the `</>` button.
-- Pasting or dropping multiple images at once only inserts the first one.
+## How the Claude bridge works
 
-## Feedback and bug reports
+1. The webview posts the CodeMirror selection to the extension host.
+2. The host saves the file if it has unsaved changes, then writes `~/.claude/live-preview-selection.json`.
+3. On every prompt, the hook (`plus/hooks/`) prints that file as context. It does so only when the selection is non-empty and less than 30 minutes old.
 
-Please use [GitHub Issues](https://github.com/t-shoot/md-live-preview-editor/issues).
+The selection stays on your own machine. Claude receives it only when you send a prompt.
 
-## License
-
-The source code of this extension is licensed under the [MIT License](LICENSE).
-
-`.drawio` files are parsed and drawn by this extension's own code — it does not
-bundle or run any part of the draw.io application.
-
-What is taken from draw.io is the **outline geometry of the AWS architecture
-shapes** (`dist/aws4-shapes.json`: each shape's width, height and SVG path
-data), so that a diagram using those shapes renders as the intended symbols
-rather than as plain boxes. That geometry is **not** covered by the MIT license:
-it is vendored unmodified from the [draw.io](https://github.com/jgraph/drawio)
-project and redistributed under its terms (see
-[LICENSE-SHAPES](LICENSE-SHAPES) and
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
-
-Amazon Web Services, AWS, and the names of AWS services are trademarks of
-Amazon.com, Inc. or its affiliates. draw.io and diagrams.net are trademarks of
-JGraph Ltd. **This extension is an independent project and is not affiliated
-with, sponsored by, or endorsed by Amazon Web Services or JGraph Ltd.**
-
----
-
-<details>
-<summary><strong>For developers (building or modifying this repository)</strong></summary>
-
-### Setup
+## Building from source
 
 ```
-npm install
-npm run compile
+npm ci
+npm run compile          # bundles, typechecks, builds the theme
+npm test                 # unit tests (vitest)
+npx playwright install chromium
+npm run test:e2e         # the real webview in headless Chromium
+npx vsce package         # → markdown-live-preview-editor-claude-<version>.vsix
 ```
 
-During development, use the `watch` task already registered in `.vscode/tasks.json` to automatically rebuild and type-check on every save (both the esbuild build and `tsc --noEmit --watch` run in parallel). Run it from VS Code via `Terminal > Run Task... > watch`, or it starts automatically with `F5` (see below).
+`plus/release.sh` builds, tests, tags and publishes a GitHub release with the `.vsix` and
+the installer zip. `node plus/render.js note.md` renders one of your own notes headlessly
+and reports what the added features produced.
 
-If you'd like build errors surfaced in VS Code's "Problems" panel, installing the [connor4312.esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) extension is recommended (already listed in `.vscode/extensions.json`, so VS Code will offer to install it when you open this folder). The build itself works fine without it.
+## Where the code is
 
-#### npm scripts
+The changes are kept apart so that upstream releases merge cleanly:
 
-| Script | What it does |
-| --- | --- |
-| `npm run compile` | Full esbuild build + `tsc --noEmit` type check (runs once) |
-| `npm run typecheck` | Type check only |
-| `npm test` | Runs the Vitest test suite once |
-| `npm run test:watch` | Runs Vitest in watch mode |
-| `npm run watch:esbuild` | esbuild in watch mode (build only, no type checking) |
-| `npm run watch:tsc` | `tsc --noEmit --watch` (type checking only, in watch mode) |
-| `npm run vscode:prepublish` | Production (minified) build; runs automatically during packaging (`vsce package`) |
+- **New files:**
+  - `src/webview-editor/plus/` holds the editor side.
+  - `src/editor/plus/` holds the extension host side.
+  - `src/shared/plus*.ts` holds pure helpers shared by both.
+  - `media/plus.css`, `plus/` (theme, fonts, hooks, installers, tools) and `test/e2e/plus.spec.ts`.
+- **Upstream files** carry only small hooks, each marked `plus:` or `md-live-preview-plus`.
+  - `src/webview-editor/plus/table.ts` replaces @lezer/markdown's GFM table parser with a copy that knows about wikilinks and quotes.
 
-### Running the extension
-
-1. Open this repository in VS Code.
-2. Press `F5` (uses the "Run Extension" configuration in `.vscode/launch.json`; the `watch` task runs automatically first, then a new "Extension Development Host" window opens).
-3. In the new window, open the bundled `sample/sample.md`.
-
-With the `watch` task running, changing the code and reloading the Extension Development Host window (`Ctrl+R`) picks up the latest changes.
-
-### Manual verification steps
-
-Most of what follows is now automated — see `npm run test:all` and the `test`
-skill. Steps 2-8 and 12-14 run in the integration and e2e suites; what is left
-genuinely manual is step 1 (the editor-title icon) and step 11 (state surviving
-a restart). The list is kept because it still describes what the extension is
-supposed to do, and because a suite that has never been read is easy to trust
-too much.
-
-`sample/sample.md` covers headings (h1–h6), bold, italic, strikethrough, inline code, blockquotes, lists, task lists, links, images, horizontal rules, a `python` code block, `mermaid` blocks (small and large diagrams), and tables (including one with blank cells, and one directly under a list item with no blank line before it). Walk through the following:
-
-1. Open `sample/sample.md` in the normal text editor and confirm the toggle icon appears at the top right of the editor title bar.
-2. Click it and confirm it switches to Live Preview. Confirm Live Preview also shows a "back to source" icon that returns to the normal editor.
-3. Confirm that `**`, `#`, `` ` ``, etc. are hidden on lines without the cursor, and shown as raw text only on the line with the cursor.
-4. Confirm a ` ```python ` block is colorized (multiple colors, not a single flat color).
-5. Confirm a ` ```mermaid ` block renders as an SVG diagram when the cursor is away, and reverts to raw text editing when the cursor enters it.
-6. Edit text in Live Preview and confirm the change is reflected on disk in `sample/sample.md` (or in the same file opened in a normal editor tab).
-7. Confirm `Ctrl+Z` undoes exactly one step and `Ctrl+Shift+Z` (or `Ctrl+Y`) redoes exactly one step (no multi-step jumps, no no-ops).
-8. Change `sample/sample.md` from outside (editing it in another tab, `git checkout`, etc.) and confirm Live Preview follows along without crashing or duplicating content.
-9. Open the "CSS Themes" view in the Primary Sidebar, enable the `GitHub-like` or `Obsidian-like` sample styles, and confirm the appearance changes. Confirm editing and saving a CSS file hot-reloads any open Live Preview.
-10. Change the `mdLivePreview.defaultEditor` setting to `livePreview` and confirm `.md` files automatically open in Live Preview (and confirm reverting to `prompt` restores the original behavior).
-11. Restart VS Code, reopen `sample/sample.md` in Live Preview, and confirm state such as the enabled CSS theme persisted.
-12. Confirm the "動作確認用サンプル" section's h4–h6 headings render progressively smaller, same as the other heading levels.
-13. Confirm the "動作確認用サンプル" section's table with blank cells doesn't shift later columns left — blank cells stay in their original column position.
-14. Confirm the "動作確認用サンプル" section's table directly under a bullet item (no blank line before it) renders as an actual table, not raw `|`-delimited text.
-14. Select some text and press `Ctrl+B` / `Ctrl+I`; confirm it toggles `**bold**` / `*italic*` on and back off. With no selection, confirm it inserts an empty pair with the cursor placed inside.
-15. Copy an image (e.g. a screenshot) and paste it into Live Preview; confirm an `assets/` folder is created beside the file, the image is saved into it, and `![](assets/...)` is inserted at the cursor. Try dragging an image file from a file explorer too.
-16. Open the "Outline" view in the Primary Sidebar and confirm it lists the document's headings. Click one and confirm the editor jumps to and scrolls to that heading. Switch between multiple Live Preview tabs and confirm the outline follows the active one. Add or remove a heading and confirm the list updates.
-17. Click a table cell and confirm the table stays rendered while that one cell becomes editable, showing its raw Markdown. Type, then `Tab` to the next cell and `Enter` to commit; confirm only the edited cell changed in the source. Press `Esc` mid-edit and confirm the change is discarded.
-18. Drag across several table cells and confirm the text highlights and copies, and that the table does not revert to `|` syntax. Then click around the table repeatedly — including its outer edge and the lines between rows — and confirm it never flips to raw source.
-19. Confirm the `</>` button above the table opens the raw Markdown, and that `</>` on a Mermaid diagram, on frontmatter, and above a code block (which reveals the ` ``` ` fence lines) does the same for each.
-20. Confirm the `⧉` button on a code block copies the block's contents only — no ` ``` ` fences, and no leading indentation when the block is nested.
-21. On a Mermaid diagram, switch to full size, zoom in a few times, then press `↺`; confirm it returns all the way to the original shrink-to-fit view, not to an intermediate size.
-22. Hover a table and confirm thin strips appear along its bottom and right edges. Click each and confirm a row / a column is added, that the table's column alignment survives, and that a table nested under a list item keeps its indentation. Confirm the strips never cover the table's own border or the line below it.
-23. Click a link to an external URL and confirm it opens in the browser. Add a link to a neighbouring `.md` file (e.g. `[x](./other.md)`), click it, and confirm that file opens in the editor rather than raising an OS "file not found" dialog — and that in neither case does the link revert to its `[label](url)` source. Point a link at a file that doesn't exist and confirm a message naming the path appears.
-
-</details>
-
----
-
-## 日本語
-
-![シンタックスハイライトとMermaidダイアグラムをその場で描画するライブプレビュー](media/screenshots/code-and-mermaid.png)
-
-**Obsidianのライブプレビューのように、Markdownのプレビュー自体を直接編集できるVS Code拡張機能。**
-ファイルの見た目を保ったまま書けて、保存されるのは常に素のMarkdownです。
-**Mermaid図とdraw.io図**は、コードフェンスに書いたテキストがその場で図になります。
-
-知る限り、**`.drawio` ファイルを描画できる唯一の VS Code Markdown エディタ**です。
-draw.io 本体を使わず、AWS アーキテクチャ図形も含めて描画します。
-
-### なぜこの拡張機能?
-
-VS Codeの標準Markdownプレビューは、編集用のソースペインとプレビューペインが左右に分かれています。
-この拡張機能は、その2つを1つにまとめます。
-
-- プレビューそのものが編集可能で、**装飾された見た目のまま**タイプできる
-- カーソルが乗っている行だけ`**`や`#`などのMarkdown記法が生テキストで見える(Obsidianと同じ体験)
-- ファイルとして保存される中身は常に**素のMarkdown**。特殊な独自フォーマットにはならない
-- 既存の`.md`資産やGit管理下のドキュメントをそのまま使える
-
-### 主な機能
-
-#### ライブプレビュー編集
-CodeMirror 6ベースのカスタムエディタです。見出し・強調・引用・リスト・タスクリスト・リンク・画像・水平線・テーブルなどの記法が、装飾された表示とソース表示をカーソル位置に応じて自動的に切り替わります。`Ctrl+Z` / `Ctrl+Shift+Z`によるアンドゥ・リドゥも通常のエディタと同じ感覚で使えます。
-
-![装飾された見た目のまま編集できるライブプレビュー](media/screenshots/live-preview-editing.png)
-
-#### 太字/斜体ショートカット
-`Ctrl+B`で選択範囲を`**太字**`に、`Ctrl+I`で`*斜体*`にトグルできます。選択なしでも空のマーカー対を挿入してカーソルを内側に置きます。複数カーソルにも対応しています。
-
-#### 検索・置換
-`Ctrl+F`でエディタ右上に検索パネルが浮かびます(VS Code標準と同じ位置)。置換は左側の矢印を押すと開くので、よく使う検索だけのときは小さいままです。`Enter`と`F3`で一致箇所を移動、`Ctrl+D`で次の一致をカーソルとして追加、`Esc`で閉じます。大文字小文字の区別、単語単位、正規表現にも対応しています。
-
-検索対象は**素のMarkdown**、つまりファイルに実際に入っている文字列です。そのため`](url)`や表のパイプ、見出しの`#`も、プレビューがそれらを隠している状態のまま検索できます。隠れた記法の中に一致が見つかった場合は、その記法が表示されるので、何が見つかったのか必ず目で確認できます。
-
-#### 画像の貼付・ドラッグ&ドロップ
-クリップボードの画像(スクリーンショットなど)を貼り付けたり、画像ファイルをエディタにドラッグ&ドロップしたりすると、`.md`ファイルと同じ場所の`assets/`フォルダに保存され、カーソル位置に`![](assets/...)`が自動挿入されます。ファイル名は衝突を避けて自動生成されます。
-
-#### アウトライン(見出し一覧)ビュー
-アクティビティバーの専用「アウトライン」ビューに、開いているLive Previewの見出し(h1〜h6)が一覧表示されます。クリックすると該当の見出しへジャンプします。一覧はアクティブなタブに追従し、編集内容にあわせて更新されます。(VS Code標準のアウトラインパネルはWebviewベースのカスタムエディタに対応していないため、この拡張機能独自のビューとして実装しています。)
-
-#### シンタックスハイライト付きコードブロック
-フェンス付きコードブロック(` ```python `など)を[Shiki](https://shiki.style/)で言語ごとに色分け表示します。VS Codeのカラーテーマ(ライト/ダーク)に自動追従する`auto`モードのほか、GitHub配色などを個別に指定することもできます。
-
-#### Mermaidダイアグラム
-` ```mermaid `フェンスをその場でSVG図として描画します。図の上のツールバーには、Mermaid記法を編集する`</>`と、表示を拡大するボタンがあります。拡大表示では拡大・縮小、ドラッグでの移動、`Ctrl`/`⌘`+ホイールでの拡大縮小ができます。リセットボタンで元の縮小表示に戻ります。図をクリックしても記法には切り替わらず移動になるので、誤ってクリックしても図が消えません。
-
-#### 編集できるテーブル
-テーブルは表として描画され、作業中もその見た目のままです。セルをクリックするとそのセルだけをその場で編集でき、`Tab`/`Shift+Tab`でセル間を移動、`Enter`で確定、`Esc`で取り消します。書き戻すのは編集したセルだけなので、行のほかの文字や`|`の位置はそのまま保たれます。セルをなぞれば文字を選択してコピーできます。表の下端と右端にある細いバーで、行や列を追加できます。行の削除や列揃えの変更など、これらで届かない部分は、表の上の`</>`ボタンから元のMarkdownを開いて編集します。
-
-#### クリックできるリンク
-描画されたリンクをクリックすると、そのリンク先を開きます。`.md`ファイルなど、ワークスペース内のファイルへのリンクは、その文書自身のフォルダを基準に解決してエディタで開くので、ノート同士のリンクがそのまま使えます。`https:`や`mailto:`などのスキーム付きのリンクはOSに渡します。リンク先が見つからない場合は、パスを添えたメッセージを表示します。
-
-#### サイドバーのCSSテーマ管理、編集中はプレビューと同期ハイライト
-プライマリサイドバーの「CSS Themes」ビューから、プレビューの見た目を変えるCSSスニペットを複数登録・切替できます。CSSファイルを保存すると、開いているプレビューにホットリロードされます。
-
-![サイドバーからCSSテーマをカード形式で選択・切替](media/screenshots/css-theme-sidebar.png)
-
-カードの鉛筆アイコンから編集を開くと、CSSファイルとサンプルのライブプレビューが左右に並びます。**タイプするたびにプレビューが即座に更新され**、さらにカーソルが乗っている規則(例: `h1 { ... }`)に対応する要素がプレビュー側でふわっと光ってハイライトされるので、「このCSSがどこに効いているか」を目で見ながら編集できます。
-
-![CSSエディタでh1規則にカーソルを置くと、プレビュー側の見出しが光ってハイライトされる](media/screenshots/css-highlight-sync.png)
-
-### インストール
-
-1. VS Codeの拡張機能ビューで「Markdown Live Preview Editor」を検索してインストール
-2. またはMarketplaceのページから: [Markdown Live Preview Editor](https://marketplace.visualstudio.com/items?itemName=t-shoot.markdown-live-preview-editor)
-3. またはコマンドラインから:
-   ```
-   code --install-extension t-shoot.markdown-live-preview-editor
-   ```
-
-### クイックスタート
-
-1. `.md`ファイルを開く(既定では通常のテキストエディタで開きます)。
-2. エディタタイトルバー右上の切替アイコン(プレビューを開くボタン)をクリックし、Live Previewに切り替える。
-3. プレビュー上で直接編集する。カーソルが乗っていない行は装飾表示、カーソルが乗った行だけ生のMarkdown記法が見える。
-4. プライマリサイドバーの「CSS Themes」ビューから好みのテーマを有効化する。
-5. プライマリサイドバーの「アウトライン」ビューから見出し間をジャンプできる。
-
-`.md`ファイルを常にLive Previewで開きたい場合は、設定`mdLivePreview.defaultEditor`を`livePreview`に変更してください。
-
-### 設定項目
-
-| 設定キー | 説明 |
-| --- | --- |
-| `mdLivePreview.codeTheme` | コードハイライトの配色(`auto` / `dark-plus` / `light-plus` / `github-dark` / `github-light`)。`auto`はVS Codeのテーマ(ライト/ダーク)に追従します。 |
-| `mdLivePreview.enabledStyles` | 現在有効なCSSスニペットのID一覧(サイドバーから操作するため、通常は直接編集不要)。 |
-| `mdLivePreview.defaultEditor` | `.md`ファイルの既定エディタを Markdown Live Preview にするかどうかを制御します(`prompt`=標準エディタのまま/`livePreview`=常にLive Preview/`default`=常に標準エディタ)。 |
-
-### 既知の制約
-
-- コードハイライトは主要な言語(JS/TS/Python/Java/C/C++/C#/Go/Rust/Ruby/PHP/HTML/CSS/JSON/YAML/Markdown/Bash/SQL/Kotlin/Swiftなど)に限定しています。対象外の言語は色分けされません。
-- テーブルの編集はセルの中身と、行・列の追加までです。行や列の削除・並べ替え、列揃えの変更といったそのほかの構造の変更は、`</>`ボタンから開く元のMarkdownで行います。
-- 画像を複数同時に貼付・ドロップした場合、最初の1枚のみが挿入されます。
-
-### フィードバック・不具合報告
-
-[GitHub Issues](https://github.com/t-shoot/md-live-preview-editor/issues)からお願いします。
-
-### ライセンス
-
-この拡張機能の**ソースコード**は [MIT ライセンス](LICENSE)です。
-
-`.drawio` ファイルの解析と描画は、この拡張機能の独自実装です。draw.io 本体の
-コードは一切同梱も実行もしていません。
-
-draw.io から取り込んでいるのは、**AWS アーキテクチャ図形の輪郭データ**だけです
-（`dist/aws4-shapes.json`。各図形の幅・高さと SVG パスデータ）。これがないと、
-AWS 図形を使った図が単なる四角形として描かれてしまうためです。この図形データは
-**MIT の対象外**で、[draw.io](https://github.com/jgraph/drawio) から**改変せずに**
-取り込み、同プロジェクトの条件のもとで再配布しています
-（[LICENSE-SHAPES](LICENSE-SHAPES) および
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) を参照）。
-
-Amazon Web Services、AWS および AWS の各サービス名は、Amazon.com, Inc. または
-その関連会社の商標です。draw.io および diagrams.net は JGraph Ltd. の商標です。
-**この拡張機能は独立したプロジェクトであり、Amazon Web Services および
-JGraph Ltd. とは提携しておらず、これらによる出資・推奨も受けていません。**
-
----
-
-<details>
-<summary><strong>開発者向け情報(このリポジトリをビルド・改造する場合)</strong></summary>
-
-#### セットアップ
-
+To take a new upstream release:
 ```
-npm install
-npm run compile
+git fetch upstream && git merge upstream/main
 ```
 
-開発中は`.vscode/tasks.json`に登録済みの`watch`タスクを使うと、ファイル保存のたびに自動で再ビルド+型チェックされます(esbuildのビルドと`tsc --noEmit --watch`の両方が並行して走ります)。VS Codeで`Terminal > Run Task... > watch`から実行するか、後述の`F5`で自動的に起動します。
+## Licence
 
-エラー内容をVS Codeの「問題」パネルに表示させたい場合は、拡張機能 [connor4312.esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) のインストールを推奨します(`.vscode/extensions.json`に登録済みなので、このフォルダを開くとVS Codeが自動でインストールを提案します)。インストールしなくてもビルド自体は問題なく動作します。
-
-##### npm scripts
-
-| スクリプト | 内容 |
-| --- | --- |
-| `npm run compile` | esbuildで一括ビルド + `tsc --noEmit`で型チェック(1回だけ実行) |
-| `npm run typecheck` | 型チェックのみ実行 |
-| `npm test` | Vitestのテストスイートを1回実行 |
-| `npm run test:watch` | Vitestをwatchモードで実行 |
-| `npm run watch:esbuild` | esbuildをwatchモードで実行(ビルドのみ、型チェックはしない) |
-| `npm run watch:tsc` | `tsc --noEmit --watch`で型チェックのみwatch実行 |
-| `npm run vscode:prepublish` | 本番用(minify)ビルド。パッケージング(`vsce package`)時に自動実行される |
-
-#### 実行方法(拡張機能を試す)
-
-1. このリポジトリをVS Codeで開く。
-2. `F5`を押す(`.vscode/launch.json`の"Run Extension"設定が使われ、`watch`タスクが自動実行されたあとに「Extension Development Host」という新しいVS Codeウィンドウが立ち上がります)。
-3. 新しく開いたウィンドウで、同梱の`sample/sample.md`を開く。
-
-`watch`タスクを実行した状態で`F5`すると、コードを変更してもExtension Development Hostのウィンドウで`Ctrl+R`(Reload Window)するだけで最新の変更が反映されます。
-
-#### 動作確認の手順
-
-`sample/sample.md`には見出し(h1〜h6)・太字・斜体・取り消し線・インラインコード・引用・リスト・タスクリスト・リンク・画像・水平線・`python`コードブロック・`mermaid`ブロック(小さい図・大きい図)・テーブル(通常/空白セルを含むもの/箇条書き直下で空行なしのもの)が一通り含まれています。以下を順に確認してください。
-
-1. 通常のテキストエディタで`sample/sample.md`を開き、エディタタイトルバー右上に切替アイコン(プレビューを開くボタン)が表示されることを確認する。
-2. クリックしてLive Previewに切り替わることを確認する。Live Preview側にも「ソースに戻る」アイコンが表示され、クリックで通常エディタに戻れることを確認する。
-3. カーソルが乗っていない行では`**`, `#`, `` ` ``などの記号が隠れ、カーソルが乗った行だけ生テキストで見えることを確認する。
-4. ` ```python `ブロックが単色ではなく複数の色でハイライトされていることを確認する。
-5. ` ```mermaid `ブロックがカーソル外でSVGの図として描画され、カーソルを入れると生テキスト編集に戻ることを確認する。
-6. Live Preview側で文字を編集し、ディスク上の`sample/sample.md`(または同じファイルを別タブで開いた通常エディタ)に変更が反映されることを確認する。
-7. `Ctrl+Z`で1回分だけ戻り、`Ctrl+Shift+Z`(または`Ctrl+Y`)で1回分だけ進むことを確認する(多重に戻ったり、何も起きなかったりしないこと)。
-8. `sample/sample.md`を外部(別タブでの編集や`git checkout`など)から変更し、Live Previewがクラッシュ・内容の重複なく追従することを確認する。
-9. プライマリサイドバーの「CSS Themes」ビューを開き、`GitHub-like`や`Obsidian-like`のサンプルスタイルを有効化して見た目が変わることを確認する。CSSファイルを編集して保存すると、開いているLive Previewにホットリロードされることを確認する。
-10. 設定`mdLivePreview.defaultEditor`を`livePreview`に変更すると、`.md`ファイルを開いたときに自動でLive Previewが使われることを確認する(`prompt`に戻すと元の挙動に戻ることも確認する)。
-11. VS Codeを再起動して`sample/sample.md`を再度Live Previewで開き、有効化したCSSテーマなどの状態が保持されていることを確認する。
-12. 「動作確認用サンプル」の見出しレベル4〜6が、他の見出しと同様に段階的に小さく表示されることを確認する。
-13. 「動作確認用サンプル」の空白セルを含むテーブルで、空白セルの分だけ後続の列が左にずれず、元の列位置のまま表示されることを確認する。
-14. 「動作確認用サンプル」の箇条書き直下(空行なし)のテーブルが、生の`|`区切りテキストのままではなく、実際の表として表示されることを確認する。
-14. 文字を選択して`Ctrl+B` / `Ctrl+I`を押し、`**太字**` / `*斜体*`のオン・オフが切り替わることを確認する。選択なしで押すと、空のマーカー対が挿入されカーソルが内側に置かれることを確認する。
-15. 画像(スクリーンショットなど)をコピーしてLive Previewに貼り付け、`assets/`フォルダが作成され画像が保存され、カーソル位置に`![](assets/...)`が挿入されることを確認する。ファイルエクスプローラーから画像ファイルをドラッグ&ドロップしても同様に動作することを確認する。
-16. プライマリサイドバーの「アウトライン」ビューを開き、見出し一覧が表示されることを確認する。クリックすると該当の見出しへジャンプ・スクロールすることを確認する。複数のLive Previewタブを切り替えると、アウトラインが追従することを確認する。見出しを追加・削除すると一覧が更新されることを確認する。
-17. テーブルのセルをクリックし、表が描画されたままそのセルだけが編集状態になり、生のMarkdownが表示されることを確認する。文字を入力して`Tab`で次のセルへ移動し、`Enter`で確定して、元のMarkdownで編集したセルだけが変わっていることを確認する。編集の途中で`Esc`を押すと変更が取り消されることを確認する。
-18. テーブルのセルをまたいでドラッグし、文字が選択できてコピーできること、そのとき表が`|`記法に戻らないことを確認する。続けてテーブルの外周や行間の線を含めて何度もクリックし、生のソース表示に切り替わらないことを確認する。
-19. テーブル上部の`</>`ボタンで元のMarkdownが開くことを確認する。Mermaid・フロントマター・コードブロック(` ``` `の囲み行が現れる)でも同様に動作することを確認する。
-20. コードブロックの`⧉`ボタンで、` ``` `の囲み行を含まず、入れ子の場合も先頭の字下げを含まない、中身だけがコピーされることを確認する。
-21. Mermaidの図を原寸大に切り替えて数回拡大し、`↺`を押す。途中の大きさで止まらず、最初の縮小表示まで戻ることを確認する。
-22. テーブルにマウスを乗せ、下端と右端に細いバーが出ることを確認する。それぞれをクリックして行・列が追加されること、列揃えが保たれること、箇条書き直下のテーブルでもインデントが崩れないことを確認する。バーがテーブルの枠線や下の行にかぶらないことも確認する。
-23. 外部URLのリンクをクリックし、ブラウザで開くことを確認する。隣のファイルへのリンク(`[x](./other.md)`など)を書いてクリックし、OSの「ファイルが見つかりません」ダイアログではなく、そのファイルがエディタで開くことを確認する。どちらの場合も、リンクが`[表示文字](URL)`のソース表示に戻らないことを確認する。存在しないファイルを指すリンクでは、パスを添えたメッセージが出ることを確認する。
-
-</details>
+- **The code:** MIT, see `LICENSE`. It is t-shoot's licence, with this fork's copyright added for the changes.
+- **AWS shapes (from upstream):** their own terms, see `THIRD-PARTY-NOTICES.md` and `LICENSE-SHAPES`.
+- **Sarabun:** © 2018 The Sarabun Project Authors, SIL Open Font License 1.1, see `plus/fonts/OFL.txt`.
+  - It is embedded in the theme.
+  - The `.ttf` files in `plus/fonts/` are there if you want the font system-wide.
