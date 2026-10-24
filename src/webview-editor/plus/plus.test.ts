@@ -10,10 +10,9 @@ import { cleanLine, extractLinks, keysForNote } from '../../shared/plusBacklinks
 import { quotePrefixLength } from './table';
 import { scanFootnotes, nextFootnoteLabel } from './footnotes';
 import { CALLOUT_HEAD, calloutStyle } from './callouts';
-import { linkTexts } from './completion';
 import { anchorsInText, extractPreview, findAnchorLine } from '../../shared/plusAnchors';
 import { isNewer, parseReleaseTag } from '../../shared/plusVersion';
-import { linkFileName, rankMatches } from '../../shared/plusLinks';
+import { linkFileName, linkTexts, rankMatches } from '../../shared/plusLinks';
 
 function parse(doc: string): { state: EditorState; tables: SyntaxNode[] } {
 	const state = EditorState.create({ doc, extensions: [markdown({ extensions: GFM })] });
@@ -235,6 +234,10 @@ describe('hover preview extraction', () => {
 
 	it('an id on its own line previews the block above it', () => {
 		expect(extractPreview(law, '^table-1').text).toBe('| a | b |\n| 1 | 2 |');
+	});
+
+	it('also across the blank line Obsidian puts before such an id', () => {
+		expect(extractPreview(['> quoted', '> lines', '', '^q-1'], '^q-1').text).toBe('> quoted\n> lines');
 	});
 
 	it('a list item id previews that item', () => {

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import type { EditorToHostMessage, HostToEditorMessage } from '../../shared/messages';
 import { hasSessionFor, listAnchors, listNotes, openWikilink, previewWikilink, trackSession as trackWikiSession, type PlusSession } from './wikiOpen';
 import { forgetSelectionOf, writeSelection } from './selectionFile';
+import { handlePlusDo } from './contextMenu';
 
 export { takePendingJump } from './wikiOpen';
 
@@ -40,6 +41,9 @@ export function handlePlusMessage(
 			void previewWikilink(session, message.target).then((preview) =>
 				post({ type: 'plusPreviewResult', requestId: message.requestId, preview }),
 			);
+			return true;
+		case 'plusDo':
+			void handlePlusDo(session, message);
 			return true;
 		case 'openLink':
 			if (!message.href.startsWith('wiki:')) return false;

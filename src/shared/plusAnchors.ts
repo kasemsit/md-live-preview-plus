@@ -72,10 +72,13 @@ function blockAround(lines: string[], line: number): [number, number] {
 		return [line, end];
 	}
 	if (BLOCK_ID_ONLY.test(text)) {
-		// An id on its own line names the block just above it.
-		let from = line;
+		// An id on its own line names the block just above it — Obsidian puts a
+		// blank line between them for tables and quotes, which is skipped.
+		let end = line;
+		while (end > 0 && !lines[end - 1].trim()) end--;
+		let from = end;
 		while (from > 0 && lines[from - 1].trim()) from--;
-		return [from, line];
+		return [from, end];
 	}
 	if (LIST_ITEM.test(text)) return [line, line + 1];
 	// A paragraph: the id sits on its last line.

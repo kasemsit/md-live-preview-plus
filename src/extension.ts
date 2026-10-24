@@ -7,6 +7,7 @@ import { setGrammarRoot } from './editor/shikiHost';
 import { checkForUpdate } from './editor/plus/updateCheck';
 import { initSelectionStatus } from './editor/plus/selectionFile';
 import { registerBacklinks } from './editor/plus/backlinks';
+import { registerContextMenu } from './editor/plus/contextMenu';
 
 function getActiveMarkdownUri(): vscode.Uri | undefined {
 	if (vscode.window.activeTextEditor?.document.languageId === 'markdown') {
@@ -191,11 +192,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	void checkForUpdate(context);
 	// md-live-preview-plus: status bar item showing what Claude gets from the preview.
 	initSelectionStatus(context);
-	// md-live-preview-plus: the Backlinks view, for the active Live Preview or Markdown editor.
-	registerBacklinks(context, () => {
+	// md-live-preview-plus: the Backlinks view and the right-click menu, for the
+	// active Live Preview (or, for Backlinks, an ordinary Markdown editor).
+	const activeNote = () => {
 		const editor = vscode.window.activeTextEditor;
 		return provider.getActiveDocumentUri() ?? (editor?.document.languageId === 'markdown' ? editor.document.uri : undefined);
-	});
+	};
+	registerBacklinks(context, activeNote);
+	registerContextMenu(context, (message) => provider.postPlusToActive(message), activeNote);
 
 	context.subscriptions.push(
 		vscode.workspace.onDidCloseTextDocument((doc) => {

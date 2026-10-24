@@ -2,7 +2,7 @@ import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewU
 import type { Range } from '@codemirror/state';
 import { cursorTouchesRange, blockRevealChanged } from '../cmUtils';
 import { findCitations } from '../../shared/plusWikilinks';
-import { inSourceContext, linkClass, noteIndexChanged } from './wikilinks';
+import { inSourceContext, linkClass, LINK_CONTEXT, noteIndexChanged } from './wikilinks';
 import { registerInlinePass } from './inlineExtras';
 
 /**
@@ -19,7 +19,7 @@ function keyDeco(key: string): Decoration {
 	return Decoration.mark({
 		tagName: 'a',
 		class: `${linkClass(`@${key}`)} mlp-cite`,
-		attributes: { 'data-href': `wiki:@${key}`, title: `@${key}` },
+		attributes: { 'data-href': `wiki:@${key}`, title: `@${key}`, 'data-vscode-context': LINK_CONTEXT },
 	});
 }
 
@@ -105,6 +105,7 @@ registerInlinePass((text) => {
 					a.className = `${linkClass(`@${c.key}`)} mlp-cite`;
 					a.setAttribute('data-href', `wiki:@${c.key}`);
 					a.title = `@${c.key}`;
+					a.dataset.vscodeContext = LINK_CONTEXT;
 					a.textContent = value.slice(c.from, c.to);
 					append(a);
 					last = c.to;

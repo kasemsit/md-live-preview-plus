@@ -15,3 +15,14 @@ export function rankMatches<T extends { rel: string; dir: string; fsPath: string
 	const score = (c: { rel: string; dir: string }) => (norm(c.rel) === norm(want) ? 0 : 2) + (c.dir === hereDir ? 0 : 1);
 	return [...candidates].sort((a, b) => score(a) - score(b) || a.fsPath.length - b.fsPath.length);
 }
+
+/**
+ * What to write for each note: its bare name where that is unique in the
+ * workspace, its path otherwise — the "shortest path when possible" rule
+ * Obsidian uses, so links stay short and still resolve to one file.
+ */
+export function linkTexts(notes: { name: string; path: string }[]): string[] {
+	const count = new Map<string, number>();
+	for (const n of notes) count.set(n.name.toLowerCase(), (count.get(n.name.toLowerCase()) ?? 0) + 1);
+	return notes.map((n) => (count.get(n.name.toLowerCase())! > 1 ? n.path.replace(/\.(md|markdown)$/i, '') : n.name));
+}

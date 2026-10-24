@@ -2,6 +2,23 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
+## 0.4.7
+
+**A right-click menu** in the Live Preview. It is VS Code's own menu, and it shows only the items that fit what was clicked:
+
+- **Anywhere**:
+  - **Copy Link to This Block**: copies `[[Note#^id]]`. A paragraph or list item without a block id gets one; a quote, callout, table or code block gets its id on its own line after the block, as Obsidian does. A heading copies `[[Note#Heading]]`, or its block id if it has one.
+  - **Copy as Rich Text**: the selection, or the clicked block, as HTML for Word, Google Docs or e-mail. Headings, lists, tables, bold and links survive. Wikilinks become their labels, and `<!-- … -->` notes and block ids are left out.
+  - **Add REVIEW Comment**: inserts `<!-- REVIEW "selected text": … -->` after the block and puts the caret in it.
+  - **Open as Text at This Line**, **Open in Obsidian**.
+- **With a selection**: **Ask Claude About the Selection** focuses Claude Code's prompt box; the selection is already attached.
+- **On a link or citation**: **Open Link to the Side**.
+- **On a formula**: **Copy TeX**.
+- **On a table cell**: **Insert Row Above/Below**, **Insert Column Left/Right**, **Delete Row**, **Delete Column**, **Sort Table by This Column**, **Copy Table as Tab-Separated Text** (pastes into Excel or Sheets as cells).
+- **In a document with footnotes**: **Renumber Footnotes in Order** relabels every footnote with the number it is shown as.
+
+Every item is also a command, so it can have a keyboard shortcut. From the command palette it acts on the caret.
+
 ## 0.4.6
 
 - **Math**, rendered with KaTeX, as Obsidian and Pandoc write it:

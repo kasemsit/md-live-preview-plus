@@ -2,7 +2,7 @@
   "name": "markdown-live-preview-editor-claude",
   "displayName": "Markdown Live Preview Editor (Plus)",
   "description": "md-live-preview-plus: wikilinks with completion, callouts, footnotes, tables in quotes, and Claude Code sees the selected text. Edit the preview itself, Obsidian-style — with Mermaid and draw.io diagrams rendered inline. The only VS Code Markdown editor that draws .drawio files.",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "publisher": "local",
   "license": "MIT",
   "icon": "media/icon-128.png",
@@ -140,6 +140,96 @@
         "command": "mdLivePreview.plus.openAt",
         "title": "Open Backlink",
         "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.askClaude",
+        "title": "Ask Claude About the Selection",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.copyRichText",
+        "title": "Copy as Rich Text",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.copyBlockLink",
+        "title": "Copy Link to This Block",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.copyTex",
+        "title": "Copy TeX",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.copyTsv",
+        "title": "Copy Table as Tab-Separated Text",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.openLinkBeside",
+        "title": "Open Link to the Side",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.openAsTextHere",
+        "title": "Open as Text at This Line",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.openInObsidian",
+        "title": "Open in Obsidian",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.addReviewComment",
+        "title": "Add REVIEW Comment",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.renumberFootnotes",
+        "title": "Renumber Footnotes in Order",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.insertRowAbove",
+        "title": "Insert Row Above",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.insertRowBelow",
+        "title": "Insert Row Below",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.insertColumnLeft",
+        "title": "Insert Column Left",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.insertColumnRight",
+        "title": "Insert Column Right",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.deleteRow",
+        "title": "Delete Row",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.deleteColumn",
+        "title": "Delete Column",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.sortAscending",
+        "title": "Sort Table by This Column (A→Z)",
+        "category": "Markdown Live Preview"
+      },
+      {
+        "command": "mdLivePreview.plus.table.sortDescending",
+        "title": "Sort Table by This Column (Z→A)",
+        "category": "Markdown Live Preview"
       }
     ],
     "menus": {
@@ -171,6 +261,170 @@
         {
           "command": "mdLivePreview.plus.openAt",
           "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.askClaude",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.copyRichText",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.copyBlockLink",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.copyTex",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.copyTsv",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.openLinkBeside",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.openAsTextHere",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.openInObsidian",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.addReviewComment",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.renumberFootnotes",
+          "when": "activeCustomEditorId == mdLivePreview.editor"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertRowAbove",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertRowBelow",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertColumnLeft",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertColumnRight",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.deleteRow",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.deleteColumn",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.sortAscending",
+          "when": "false"
+        },
+        {
+          "command": "mdLivePreview.plus.table.sortDescending",
+          "when": "false"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "mdLivePreview.plus.askClaude",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpHasSelection",
+          "group": "1_plus_claude@1"
+        },
+        {
+          "command": "mdLivePreview.plus.copyRichText",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "2_plus_copy@1"
+        },
+        {
+          "command": "mdLivePreview.plus.copyBlockLink",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "2_plus_copy@2"
+        },
+        {
+          "command": "mdLivePreview.plus.copyTex",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpMath",
+          "group": "2_plus_copy@3"
+        },
+        {
+          "command": "mdLivePreview.plus.table.copyTsv",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "2_plus_copy@4"
+        },
+        {
+          "command": "mdLivePreview.plus.openLinkBeside",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpLink",
+          "group": "3_plus_open@1"
+        },
+        {
+          "command": "mdLivePreview.plus.openAsTextHere",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "3_plus_open@2"
+        },
+        {
+          "command": "mdLivePreview.plus.openInObsidian",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "3_plus_open@3"
+        },
+        {
+          "command": "mdLivePreview.plus.addReviewComment",
+          "when": "webviewId == 'mdLivePreview.editor'",
+          "group": "4_plus_edit@1"
+        },
+        {
+          "command": "mdLivePreview.plus.renumberFootnotes",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpHasFootnotes",
+          "group": "4_plus_edit@2"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertRowAbove",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@1"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertRowBelow",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@2"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertColumnLeft",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@3"
+        },
+        {
+          "command": "mdLivePreview.plus.table.insertColumnRight",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@4"
+        },
+        {
+          "command": "mdLivePreview.plus.table.deleteRow",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@5"
+        },
+        {
+          "command": "mdLivePreview.plus.table.deleteColumn",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@6"
+        },
+        {
+          "command": "mdLivePreview.plus.table.sortAscending",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@7"
+        },
+        {
+          "command": "mdLivePreview.plus.table.sortDescending",
+          "when": "webviewId == 'mdLivePreview.editor' && mlpTable",
+          "group": "5_plus_table@8"
         }
       ]
     },

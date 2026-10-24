@@ -62,6 +62,7 @@ export function loadKatex(): Promise<KatexApi> {
 }
 
 const cache = new Map<string, string>();
+const MATH_CONTEXT = JSON.stringify({ mlpMath: true });
 
 function toHtml(katex: KatexApi, tex: string, display: boolean): string {
 	const key = `${display ? 'D' : 'I'}${tex}`;
@@ -83,6 +84,9 @@ function toHtml(katex: KatexApi, tex: string, display: boolean): string {
  * and replaced once it is; `onLate` runs then (the widget's height changed).
  */
 export function renderMathInto(el: HTMLElement, tex: string, display: boolean, onLate?: () => void): void {
+	// The TeX, for "Copy TeX" and rich-text copy; `mlpMath` shows the math items of the right-click menu.
+	el.dataset.mlpTex = tex;
+	el.dataset.vscodeContext = MATH_CONTEXT;
 	const draw = (katex: KatexApi) => {
 		const html = toHtml(katex, tex, display);
 		if (html) el.innerHTML = html;

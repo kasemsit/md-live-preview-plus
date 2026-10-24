@@ -16,6 +16,11 @@ This fork adds:
   - A link to a note that does not exist is shown faint.
 - **Backlinks**: a sidebar view lists the notes that link to the one you are reading, each with the line that does it. A draft citing `[@key]` counts as a link to `@key.md`.
 - **Pandoc citations** `[@key]`: each key links to its `@key` reference note, with hover and click as for wikilinks. A key with no note is drawn faint.
+- **A right-click menu** that offers what fits the spot:
+  - copy a block link (adds the `^id` for you), copy as rich text for Word, add a REVIEW comment, ask Claude about the selection;
+  - open a link to the side, copy a formula's TeX;
+  - insert, delete and sort table rows and columns, copy a table for Excel;
+  - renumber footnotes.
 - **Completion**:
   - `[[` offers the notes in the workspace.
   - `[[note#` offers that note's headings, and `[[note#^` its block ids.

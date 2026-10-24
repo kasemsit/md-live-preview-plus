@@ -11,6 +11,7 @@ import type { PlusAnchor, PlusNote } from '../../shared/messages';
 import { listAnchors, listNotes } from './hostRequests';
 import { insertFootnote, scanFootnotes } from './footnotes';
 import { anchorsInText } from '../../shared/plusAnchors';
+import { linkTexts } from '../../shared/plusLinks';
 
 /**
  * Completion for what Obsidian completes: note names after `[[`, headings and
@@ -27,17 +28,6 @@ function applyClosing(text: string, close: string) {
 			selection: { anchor: from + text.length + close.length },
 		});
 	};
-}
-
-/**
- * What to write for each note: its bare name where that is unique in the
- * workspace, its path otherwise — the "shortest path when possible" rule
- * Obsidian uses, so links stay short and still resolve to one file.
- */
-export function linkTexts(notes: PlusNote[]): string[] {
-	const count = new Map<string, number>();
-	for (const n of notes) count.set(n.name.toLowerCase(), (count.get(n.name.toLowerCase()) ?? 0) + 1);
-	return notes.map((n) => (count.get(n.name.toLowerCase())! > 1 ? n.path.replace(/\.(md|markdown)$/i, '') : n.name));
 }
 
 const noteSource: CompletionSource = async (context: CompletionContext): Promise<CompletionResult | null> => {

@@ -3,6 +3,7 @@ import { DocumentSyncSession } from './documentSync';
 import { extractHeadings } from '../shared/headings';
 import type { HeadingItem } from '../shared/headings';
 import { escapeAttribute } from '../shared/i18n';
+import type { PlusHostToEditorMessage } from '../shared/messages';
 
 export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvider {
 	static readonly viewType = 'mdLivePreview.editor';
@@ -83,6 +84,13 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 	/** md-live-preview-plus: the document of the active Live Preview panel, if any. */
 	getActiveDocumentUri(): vscode.Uri | undefined {
 		return this.findActiveSession()?.getDocument().uri;
+	}
+
+	/** md-live-preview-plus: sends a plus message to the active Live Preview panel; false when there is none. */
+	postPlusToActive(message: PlusHostToEditorMessage): boolean {
+		const session = this.findActiveSession();
+		session?.postPlus(message);
+		return !!session;
 	}
 
 	/** md-live-preview-plus: inserts a footnote in the active Live Preview panel, if any. */

@@ -34,6 +34,8 @@ const hidden = Decoration.replace({});
 /** The note list arrived or changed: unresolved-link styling has to be recomputed. */
 export const noteIndexChanged = StateEffect.define<null>();
 
+export const LINK_CONTEXT = JSON.stringify({ mlpLink: true });
+
 export function linkClass(target: string): string {
 	return isUnresolved(target) ? 'mlp-link mlp-wikilink mlp-wikilink-unresolved' : 'mlp-link mlp-wikilink';
 }
@@ -42,7 +44,8 @@ function linkMark(target: string): Decoration {
 	return Decoration.mark({
 		tagName: 'a',
 		class: linkClass(target),
-		attributes: { 'data-href': `wiki:${target}`, title: target },
+		// `mlpLink` shows the link items of the right-click menu (plus/contextMenu.ts).
+		attributes: { 'data-href': `wiki:${target}`, title: target, 'data-vscode-context': LINK_CONTEXT },
 	});
 }
 
@@ -144,6 +147,7 @@ export function wikilinkElement(target: string, label: string): HTMLAnchorElemen
 	a.setAttribute('data-href', `wiki:${target}`);
 	a.title = target;
 	a.textContent = label;
+	a.dataset.vscodeContext = LINK_CONTEXT;
 	return a;
 }
 

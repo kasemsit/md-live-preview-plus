@@ -535,6 +535,8 @@ class TableWidget extends WidgetType {
 		const wrap = document.createElement('div');
 		// plus: a table inside a blockquote/callout is framed by the theme.
 		wrap.className = />/.test(this.indent) ? 'mlp-table-wrap mlp-table-in-quote' : 'mlp-table-wrap';
+		// plus: shows the table items of the right-click menu (plus/contextMenu.ts).
+		wrap.dataset.vscodeContext = '{"mlpTable":true}';
 		wrap.dataset.mlpTableFrom = String(this.tableFrom);
 		// The button is a normal element *before* the table, not an overlay on top
 		// of it: floated over the corner it was easy to miss, and it had to be kept

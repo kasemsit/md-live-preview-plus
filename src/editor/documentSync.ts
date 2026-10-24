@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { EditorToHostMessage, HostToEditorMessage, TextChange } from '../shared/messages';
+import type { EditorToHostMessage, HostToEditorMessage, PlusHostToEditorMessage, TextChange } from '../shared/messages';
 import { pickCodeTheme, tokenizeDocument } from './shikiHost';
 import { extensionForMimeType, generateImageFileName } from '../shared/imageAssets';
 import { resolveLinkTarget } from '../shared/linkTarget';
@@ -359,6 +359,11 @@ export class DocumentSyncSession {
 	/** md-live-preview-plus: insert a new footnote at the caret. */
 	insertFootnote(): void {
 		this.post({ type: 'plusInsertFootnote' });
+	}
+
+	/** md-live-preview-plus: send a plus message (a context-menu command) to this editor. */
+	postPlus(message: PlusHostToEditorMessage): void {
+		this.post(message);
 	}
 
 	dispose() {

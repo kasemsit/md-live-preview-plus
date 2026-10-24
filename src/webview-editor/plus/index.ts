@@ -12,6 +12,7 @@ import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
 import { handlePlusReply, setPlusPoster } from './hostRequests';
+import { contextMenuExtension, runPlusCommand } from './contextMenu';
 
 /**
  * md-live-preview-plus: everything this fork adds to the editor webview, as one
@@ -29,6 +30,7 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 		citationPlugin,
 		mathExtension,
 		selectionReporter(post),
+		contextMenuExtension(post),
 		plusCompletion,
 	];
 }
@@ -36,6 +38,10 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 /** Handles a plus message from the host. Returns true when it was one. */
 export function handlePlusHostMessage(view: EditorView | undefined, message: HostToEditorMessage): boolean {
 	if (handlePlusReply(message)) return true;
+	if (message.type === 'plusRun') {
+		if (view) runPlusCommand(view, message.command, message.range);
+		return true;
+	}
 	if (message.type === 'plusInsertFootnote') {
 		if (view) insertFootnote(view);
 		return true;

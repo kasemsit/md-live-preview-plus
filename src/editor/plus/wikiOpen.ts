@@ -78,10 +78,10 @@ async function readLines(uri: vscode.Uri): Promise<string[]> {
  * Opens a note in Live Preview and moves to `line` (1-based; 0 = no jump) once
  * its editor has the text — or at once, when that editor is already open.
  */
-export async function openAtLine(uri: vscode.Uri, line: number): Promise<void> {
+export async function openAtLine(uri: vscode.Uri, line: number, beside = false): Promise<void> {
 	const key = uri.toString();
 	if (line) pendingJumps.set(key, line);
-	await vscode.commands.executeCommand('vscode.openWith', uri, 'mdLivePreview.editor');
+	await vscode.commands.executeCommand('vscode.openWith', uri, 'mdLivePreview.editor', beside ? vscode.ViewColumn.Beside : undefined);
 	if (!line) return;
 	// Already open: no `ready` will come, so jump in the existing editor.
 	setTimeout(() => {
@@ -96,7 +96,7 @@ export async function openAtLine(uri: vscode.Uri, line: number): Promise<void> {
 	}, 500);
 }
 
-export async function openWikilink(session: PlusSession, link: string): Promise<void> {
+export async function openWikilink(session: PlusSession, link: string, beside = false): Promise<void> {
 	const parts = link.split('#');
 	const name = parts[0].trim();
 	const anchor = parts.length > 1 ? parts[parts.length - 1].trim() : '';
@@ -109,7 +109,7 @@ export async function openWikilink(session: PlusSession, link: string): Promise<
 		}
 		const isMarkdown = /\.(md|markdown)$/i.test(uri.fsPath);
 		if (!isMarkdown) {
-			await vscode.commands.executeCommand('vscode.open', uri);
+			await vscode.commands.executeCommand('vscode.open', uri, beside ? vscode.ViewColumn.Beside : undefined);
 			return;
 		}
 		let line = 0;
@@ -117,11 +117,11 @@ export async function openWikilink(session: PlusSession, link: string): Promise<
 			line = findAnchorLine(await readLines(uri), anchor);
 			if (!line) void vscode.window.showWarningMessage(`Anchor not found in ${path.basename(uri.fsPath)}: #${anchor}`);
 		}
-		if (uri.toString() === here.toString()) {
+		if (uri.toString() === here.toString() && !beside) {
 			if (line) session.jumpToLine(line);
 			return;
 		}
-		await openAtLine(uri, line);
+		await openAtLine(uri, line, beside);
 	} catch (err) {
 		void vscode.window.showWarningMessage(`Wikilink: ${err instanceof Error ? err.message : String(err)}`);
 	}

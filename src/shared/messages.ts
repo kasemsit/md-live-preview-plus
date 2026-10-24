@@ -75,11 +75,36 @@ export interface PlusPreview {
 	truncated: boolean;
 }
 
+/**
+ * Context-menu commands the editor webview carries out itself, on the spot that
+ * was right-clicked (or the caret, when run from the command palette).
+ */
+export type PlusCommand =
+	| 'copyBlockLink'
+	| 'addReviewComment'
+	| 'copyRichText'
+	| 'openAsTextHere'
+	| 'openLinkBeside'
+	| 'copyTex'
+	| 'renumberFootnotes'
+	| 'table.insertRowAbove'
+	| 'table.insertRowBelow'
+	| 'table.insertColumnLeft'
+	| 'table.insertColumnRight'
+	| 'table.deleteRow'
+	| 'table.deleteColumn'
+	| 'table.sortAscending'
+	| 'table.sortDescending'
+	| 'table.copyTsv';
+
 export type PlusHostToEditorMessage =
 	| { type: 'plusNotes'; requestId: number; notes: PlusNote[] }
 	| { type: 'plusPreviewResult'; requestId: number; preview: PlusPreview }
 	| { type: 'plusAnchors'; requestId: number; anchors: PlusAnchor[] }
-	| { type: 'plusInsertFootnote' };
+	| { type: 'plusInsertFootnote' }
+	// `range` (document offsets) overrides the selection — used by tests and by
+	// callers that already know what to act on.
+	| { type: 'plusRun'; command: PlusCommand; range?: { from: number; to: number } };
 
 export type PlusEditorToHostMessage =
 	// The editor selection, as exact Markdown source with its line numbers;
@@ -90,7 +115,14 @@ export type PlusEditorToHostMessage =
 	// `target` is the wikilink target before `#`; empty means the current document.
 	| { type: 'plusListAnchors'; requestId: number; target: string }
 	// `target` is everything after `wiki:` — `note#anchor`.
-	| { type: 'plusPreview'; requestId: number; target: string };
+	| { type: 'plusPreview'; requestId: number; target: string }
+	// What a context-menu command needs the host for: the clipboard, opening
+	// files, telling the user something.
+	| { type: 'plusDo'; action: 'copy'; text: string; notice: string }
+	| { type: 'plusDo'; action: 'copyBlockLink'; anchor: string }
+	| { type: 'plusDo'; action: 'openAsText'; line: number }
+	| { type: 'plusDo'; action: 'openBeside'; href: string }
+	| { type: 'plusDo'; action: 'notify'; message: string; error?: boolean };
 
 export interface StyleEntry {
 	id: string;

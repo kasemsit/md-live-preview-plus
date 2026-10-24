@@ -442,3 +442,158 @@ test.describe('math', () => {
 		await expect(page.locator('.cm-line').filter({ hasText: 'money' })).toContainText('$a_i$');
 	});
 });
+
+// ── Right-click menu ──
+// VS Code's own menu cannot be opened in a page, so each test does what it
+// does: a `contextmenu` event on the element (which the editor remembers),
+// then the `plusRun` message the host sends when an item is chosen.
+
+type Edit = { type: 'edit'; changes: { from: number; to: number; insert: string }[] };
+
+/** The document after every edit the editor has sent the host. */
+async function docText(page: Page, initial: string): Promise<string> {
+	await page.waitForTimeout(400); // edits are flushed after 250 ms
+	let text = initial;
+	for (const e of (await posted(page)).filter((m) => m.type === 'edit') as unknown as Edit[]) {
+		for (const c of [...e.changes].sort((a, b) => b.from - a.from)) text = text.slice(0, c.from) + c.insert + text.slice(c.to);
+	}
+	return text;
+}
+
+async function rightClick(page: Page, selector: string, nth = 0): Promise<void> {
+	const box = (await page.locator(selector).nth(nth).boundingBox())!;
+	await page.evaluate(
+		([sel, n, x, y]) => {
+			const el = document.querySelectorAll(sel as string)[n as number];
+			el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x as number, clientY: y as number, button: 2 }));
+		},
+		[selector, nth, box.x + 4, box.y + box.height / 2],
+	);
+}
+
+const run = (page: Page, command: string, range?: { from: number; to: number }) => postToWebview(page, { type: 'plusRun', command, range });
+const lastDo = async (page: Page) => (await posted(page)).filter((m) => m.type === 'plusDo').at(-1);
+
+test.describe('right-click menu', () => {
+	test('elements tell VS Code what they are, so the menu shows the right items', async ({ page }) => {
+		await mountEditor(page, '# T\n\nText [[Note]] and $x$.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nNote[^1].\n\n[^1]: Def.\n');
+		const root = JSON.parse((await page.locator('.cm-editor').getAttribute('data-vscode-context'))!);
+		expect(root).toMatchObject({ mlpEditor: true, mlpHasSelection: false, mlpHasFootnotes: true });
+		await expect(page.locator('.cm-line .mlp-wikilink')).toHaveAttribute('data-vscode-context', '{"mlpLink":true}');
+		await expect(page.locator('.cm-line .mlp-math')).toHaveAttribute('data-vscode-context', '{"mlpMath":true}');
+		await expect(page.locator('.mlp-table-wrap')).toHaveAttribute('data-vscode-context', '{"mlpTable":true}');
+		await page.locator('.cm-line').filter({ hasText: 'Text' }).click({ position: { x: 4, y: 6 } });
+		await page.keyboard.press('Shift+End');
+		await expect.poll(async () => JSON.parse((await page.locator('.cm-editor').getAttribute('data-vscode-context'))!).mlpHasSelection).toBe(true);
+	});
+
+	test('Copy Link to This Block adds a block id to a paragraph, or reuses one', async ({ page }) => {
+		const DOC = '# T\n\n### มาตรา 32 — สิทธิคัดค้าน ^ma-32\n\nA paragraph\nover two lines.\n\nEnd.\n';
+		await mountEditor(page, DOC);
+		await rightClick(page, '.cm-line', 2); // the heading
+		await run(page, 'copyBlockLink');
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'copyBlockLink', anchor: '^ma-32' });
+		await rightClick(page, '.cm-line', 4); // first line of the paragraph
+		await run(page, 'copyBlockLink');
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'copyBlockLink' });
+		const anchor = String((await lastDo(page))!.anchor);
+		expect(anchor).toMatch(/^\^[a-z0-9]{6}$/);
+		expect(await docText(page, DOC)).toContain(`over two lines. ${anchor}\n`);
+	});
+
+	test('a table gets its block id on its own line after it', async ({ page }) => {
+		const DOC = '# T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nEnd.\n';
+		await mountEditor(page, DOC);
+		await rightClick(page, '.mlp-table-wrap td');
+		await run(page, 'copyBlockLink');
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'copyBlockLink' });
+		const anchor = String((await lastDo(page))!.anchor);
+		expect(await docText(page, DOC)).toContain(`| 1 | 2 |\n\n${anchor}\n\nEnd.`);
+	});
+
+	test('Add REVIEW Comment quotes the selection after its paragraph', async ({ page }) => {
+		const DOC = '# T\n\nSome draft sentence here.\nEnd.\n\nNext.\n';
+		await mountEditor(page, DOC);
+		await run(page, 'addReviewComment', undefined);
+		// With no right-click, the caret (line 1) decides; select first.
+		await page.locator('.cm-line').filter({ hasText: 'Some draft' }).click({ position: { x: 4, y: 6 } });
+		await page.keyboard.press('Shift+End');
+		await run(page, 'addReviewComment');
+		await page.keyboard.type('check this');
+		expect(await docText(page, DOC)).toContain('End.\n\n<!-- REVIEW "Some draft sentence here.": check this -->\n\nNext.');
+	});
+
+	test('Renumber Footnotes relabels by order of citation', async ({ page }) => {
+		const DOC = '# T\n\nFirst[^7] then[^2] and[^b].\n\n[^2]: Two.\n[^7]: Seven.\n[^b]: Bee.\n';
+		await mountEditor(page, DOC);
+		await run(page, 'renumberFootnotes');
+		expect(await docText(page, DOC)).toBe('# T\n\nFirst[^1] then[^2] and[^3].\n\n[^2]: Two.\n[^1]: Seven.\n[^3]: Bee.\n');
+	});
+
+	test('table items: insert, delete, sort, copy', async ({ page }) => {
+		const DOC = '# T\n\n| name | n |\n|---|---|\n| bee | 10 |\n| ant | 9 |\n\nEnd.\n';
+		await mountEditor(page, DOC);
+		await rightClick(page, '[data-mlp-row="1"][data-mlp-col="1"]');
+		await run(page, 'table.sortAscending');
+		await expect(page.locator('.mlp-table-wrap td').first()).toHaveText('ant');
+		await rightClick(page, '[data-mlp-row="1"][data-mlp-col="0"]');
+		await run(page, 'table.insertRowBelow');
+		await expect(page.locator('.mlp-table-wrap tr')).toHaveCount(4);
+		await rightClick(page, '[data-mlp-row="1"][data-mlp-col="1"]');
+		await run(page, 'table.deleteColumn');
+		await expect(page.locator('.mlp-table-wrap th')).toHaveCount(1);
+		await rightClick(page, '[data-mlp-row="1"][data-mlp-col="0"]');
+		await run(page, 'table.copyTsv');
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'copy', text: 'name\nant\n\nbee' });
+	});
+
+	test('Copy TeX and Open Link to the Side act on what was right-clicked', async ({ page }) => {
+		await mountEditor(page, '# T\n\nSee [[Other#H|other]] and $\\frac{a}{b}$.\n\nEnd.\n');
+		await rightClick(page, '.cm-line .mlp-math');
+		await run(page, 'copyTex');
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'copy', text: '\\frac{a}{b}' });
+		await rightClick(page, '.cm-line .mlp-wikilink');
+		await run(page, 'openLinkBeside');
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'openBeside', href: 'wiki:Other#H' });
+	});
+
+	test('Copy as Rich Text puts semantic HTML on the clipboard', async ({ page }) => {
+		const DOC = '# T\n\n## Section\n\nA **bold** [[Note|link]], a cite [@smith2020] and $x^2$.\n\n<!-- REVIEW: not for the reader -->\n\n- one\n- two\n\n| a | b |\n|---|---|\n| 1 | 2 |\n';
+		await mountEditor(page, DOC);
+		// The test page is not a secure context, so it has no async clipboard;
+		// VS Code's webview does. Stand one in that records what is written.
+		await page.evaluate(() => {
+			const w = window as unknown as Record<string, unknown>;
+			w.ClipboardItem = class {
+				constructor(private readonly data: Record<string, Blob>) {}
+				getType(type: string) {
+					return Promise.resolve(this.data[type]);
+				}
+			};
+			Object.defineProperty(navigator, 'clipboard', {
+				value: {
+					write: async (items: { getType(t: string): Promise<Blob> }[]) => {
+						w.__clipHtml = await (await items[0].getType('text/html')).text();
+						w.__clipText = await (await items[0].getType('text/plain')).text();
+					},
+				},
+			});
+		});
+		await run(page, 'copyRichText', { from: DOC.indexOf('## Section'), to: DOC.length });
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'notify', message: 'Copied as rich text.' });
+		const html = String(await page.evaluate(() => (window as unknown as Record<string, unknown>).__clipHtml));
+		const text = String(await page.evaluate(() => (window as unknown as Record<string, unknown>).__clipText));
+		expect(text).toContain('Section\n');
+		expect(text).toContain('a\tb');
+		expect(html).toContain('<h2>Section</h2>');
+		expect(html).toContain('<strong>bold</strong>');
+		expect(html).toContain('link');
+		expect(html).not.toContain('[[');
+		expect(html).toContain('[@smith2020]');
+		expect(html).toContain('$x^2$');
+		expect(html).not.toContain('REVIEW');
+		expect(html).toMatch(/<ul><li>one<\/li><li>two<\/li><\/ul>/);
+		expect(html).toContain('<th>a</th>');
+		expect(html).not.toContain('class=');
+	});
+});
