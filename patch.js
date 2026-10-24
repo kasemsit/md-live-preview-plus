@@ -398,6 +398,41 @@ catch(err){mlpLog("error "+(err&&err.stack||err));vs.window.showWarningMessage("
   }
 }
 
+// 11. Ship the styling with the .vsix, so a fresh machine needs no manual theme setup.
+//    a) styles/src/extension-additions.css (callouts, tables in quotes) is appended to
+//       the extension's own CSS: styled whichever CSS theme is enabled.
+//    b) styles/thai-readable.css (built by styles/build_style.py, fonts embedded) is
+//       copied into media/sample-styles/ by build.sh. On activation the extension
+//       copies it into the user's style folder whenever its content changed, and
+//       enables it when no theme, or only the stock default "vscode.css", is enabled.
+{
+  const p = path.join(dir, "dist/extension.js");
+  let s = fs.readFileSync(p, "utf8");
+  if (s.includes("mlpSeedTheme")) console.log("skip  dist/extension.js theme seeding (already patched)");
+  else {
+    const themeSrc = path.join(__dirname, "styles", "thai-readable.css");
+    if (!fs.existsSync(themeSrc)) throw new Error("styles/thai-readable.css missing — run python3 styles/build_style.py first");
+    const ver = require("crypto").createHash("sha1").update(fs.readFileSync(themeSrc)).digest("hex").slice(0, 12);
+    const a = "async ensureSampleStyles(){";
+    if (s.split(a).length - 1 !== 1) throw new Error("theme seeding: ensureSampleStyles anchor not found once — upstream changed");
+    s = s.replace(a, a + "await mlpSeedTheme(this);");
+    s += `
+;async function mlpSeedTheme(self){const vs=require("vscode"),KEY="mdLivePreview.plusThemeVersion",VER=${JSON.stringify(ver)},NAME="thai-readable.css";
+try{if(self.context.globalState.get(KEY)===VER)return;const dir=self.stylesUri;try{await vs.workspace.fs.createDirectory(dir)}catch(_){}
+const src=vs.Uri.joinPath(self.context.extensionUri,"media","sample-styles",NAME);await vs.workspace.fs.writeFile(vs.Uri.joinPath(dir,NAME),await vs.workspace.fs.readFile(src));
+const on=self.getEnabledIds();if(on.length===0||on.length===1&&on[0]==="vscode.css")await self.setEnabledIds([NAME]);
+await self.context.globalState.update(KEY,VER)}catch(e){console.error("md-live-preview-plus: theme seeding failed",e)}}
+`;
+    fs.writeFileSync(p, s);
+    const mediaDir = path.join(dir, "media", "sample-styles");
+    fs.mkdirSync(mediaDir, { recursive: true });
+    fs.copyFileSync(themeSrc, path.join(mediaDir, "thai-readable.css"));
+    fs.appendFileSync(path.join(dir, "media/webview-editor-theme.css"),
+      "\n" + fs.readFileSync(path.join(__dirname, "styles", "src", "extension-additions.css"), "utf8"));
+    console.log(`patch dist/extension.js + media (theme ships in the vsix, version ${ver})`);
+  }
+}
+
 if (rename) {
   const p = path.join(dir, "package.json");
   const j = JSON.parse(fs.readFileSync(p, "utf8"));

@@ -10,6 +10,7 @@ UP="${1:-upstream/t-shoot.markdown-live-preview-editor-0.4.0.vsix}"
 rm -rf build/unpacked && mkdir -p build/unpacked
 unzip -q "$UP" -d build/unpacked
 SRC=build/unpacked/extension
+python3 styles/build_style.py
 node patch.js "$SRC" --rename
 node --check "$SRC/dist/extension.js"
 node --check "$SRC/dist/webview-editor.js"

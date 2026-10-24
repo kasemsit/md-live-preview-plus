@@ -19,6 +19,7 @@ const {chromium}=require(process.env.PLAYWRIGHT||"playwright-core");
    out.tableWraps=[...document.querySelectorAll("table")].map(t=>{let top=t;while(top.parentElement&&!top.parentElement.classList.contains("cm-content"))top=top.parentElement;return{top:top.tagName+"."+top.className,prev:top.previousElementSibling&&top.previousElementSibling.className}});
    if(D)out.dump=[...document.querySelectorAll(".cm-line")].filter(l=>l.textContent.includes(D)).slice(0,3).map(l=>l.innerHTML.slice(0,1500));
    out.fn={refs:document.querySelectorAll(".mlp-fn-ref").length,firstRef:(document.querySelector(".mlp-fn")||{}).outerHTML?.slice(0,400),defs:document.querySelectorAll(".cm-line.mlp-fn-def").length,firstDef:(document.querySelector(".cm-line.mlp-fn-def")||{}).textContent?.slice(0,120)};
+   out.coBorder=[...document.querySelectorAll(".cm-line.mlp-callout-first")].map(l=>getComputedStyle(l).borderLeftColor+" "+getComputedStyle(l).backgroundColor);
    out.wikilinks=[...document.querySelectorAll(".mlp-wikilink")].map(a=>a.outerHTML);
    out.lines=[...document.querySelectorAll(".cm-line")].map(l=>l.className+" | "+l.textContent.slice(0,80));
    return out},process.env.DUMP||"");

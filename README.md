@@ -7,7 +7,7 @@ independent patch: it is affiliated with neither t-shoot nor Obsidian. This pack
 - **The selection, passed to Claude**: the exact markdown source, line numbers and file path.
 - **Auto-save on select**: the file is saved when you select, so line numbers match the file on disk.
 - **Wikilinks**: `[[note]]`, `[[note#Heading]]`, `[[note#^block|label]]` render as links and open the note in Live Preview at the anchor. Notes are found by name anywhere in the workspace, as in Obsidian.
-- **Callouts**: `> [!note]`, `> [!danger] Title` and the other Obsidian types render as coloured cards with an icon (styled by `styles/thai-readable.css`).
+- **Callouts**: `> [!note]`, `> [!danger] Title` and the other Obsidian types render as coloured cards with an icon.
 - **Tables inside quotes and callouts** render as tables, including a table directly under a line of text, and a `|` inside `[[...]]` no longer splits a table cell.
 - **Footnotes**: `[^1]` renders as a superscript number with a hover card. Clicking it jumps to the definition, and `↩` jumps back. `[^1]: …` definitions render as a numbered list.
 - **A readable highlight**: the selection band becomes translucent instead of hiding the text.
@@ -23,68 +23,44 @@ not published there, on purpose: the Marketplace extension is t-shoot's own.
 
 ## Install (Windows, macOS, Linux)
 
-1. **Remove the original extension.** In Extensions, uninstall *Markdown Live Preview
-   Editor* by t-shoot. Both register the same editor and commands.
-2. **Install the patched copy:**
-   ```
-   code --install-extension markdown-live-preview-editor-claude-0.4.0.vsix   # from the Release assets
-   ```
-   Or use Extensions → `...` → *Install from VSIX...*
-3. **Install the hook.** Copy it into `~/.claude/hooks/`, which is
-   `%USERPROFILE%\.claude\hooks\` on Windows.
-   - Windows: `hooks/live-preview-selection.ps1`
-   - macOS/Linux: `hooks/live-preview-selection.py` (needs `python3`)
-4. **Register the hook** in `~/.claude/settings.json`. Merge it into any `hooks`
-   already there; don't replace them.
+Download `md-live-preview-plus.zip` from [Releases](../../releases), unzip it, then run the
+installer from that folder:
 
-   **Windows:**
-   ```json
-   {
-     "hooks": {
-       "UserPromptSubmit": [
-         { "hooks": [ { "type": "command", "shell": "powershell",
-             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:USERPROFILE\\.claude\\hooks\\live-preview-selection.ps1\"",
-             "timeout": 5 } ] }
-       ]
-     }
-   }
-   ```
-   **macOS/Linux:**
-   ```json
-   {
-     "hooks": {
-       "UserPromptSubmit": [
-         { "hooks": [ { "type": "command",
-             "command": "python3 ~/.claude/hooks/live-preview-selection.py",
-             "timeout": 5 } ] }
-       ]
-     }
-   }
-   ```
-5. Reload VS Code, open a `.md` file with *Open With → Markdown Live Preview*, select
-   some text, and ask Claude what you selected.
+- **Windows:** `powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`
+- **macOS / Linux:** `./install.sh` (needs `python3`)
 
-## Font (optional)
+The installer does three things:
+1. It removes t-shoot's original extension if present, because both register the same editor. Then it installs the `.vsix`.
+2. It copies the Claude Code hook to `~/.claude/hooks/`, or `%USERPROFILE%\.claude\hooks\` on Windows.
+3. It registers the hook in Claude Code's `settings.json`, keeping your other settings. Running it twice is harmless.
 
-`styles/thai-readable.css` is a reading style for Thai and English. It embeds
-Sarabun in four styles (Regular, Bold, Italic, Bold Italic), so no font needs to be
-installed. Sarabun is © 2018 The Sarabun Project Authors and is used under the SIL
-Open Font License 1.1 (`fonts/OFL.txt`). The `.ttf` files in `fonts/` are included
-for anyone who wants to install the font system-wide as well.
+Then reload VS Code (*Developer: Reload Window*) and start a new Claude Code session. Open a
+`.md` file with *Open With → Markdown Live Preview*. To check that the bridge works:
+1. Select some text.
+2. Check that `~/.claude/live-preview-selection.json` updates.
+3. Ask Claude what you selected.
 
-To enable the style:
-1. Open the **CSS Themes** view in the sidebar.
-2. Add `thai-readable.css`, or copy it into the extension's styles folder:
-   - Linux: `~/.config/Code/User/globalStorage/local.markdown-live-preview-editor-claude/styles/`
-   - Windows: `%APPDATA%\Code\User\globalStorage\local.markdown-live-preview-editor-claude\styles\`
-3. Enable it there.
+**The look comes with the extension.** Callout colours, footnotes and tables in quotes are
+styled by the extension itself, whichever CSS theme you use. The Thai/English reading theme
+`thai-readable.css` ships inside the `.vsix`. On first run it is copied to the **CSS
+Themes** view and switched on, unless you have already chosen another theme. Later releases
+update it.
 
-To change the theme, edit `styles/src/thai-readable.theme.css` and run
-`python3 styles/build_style.py --install`. The script embeds the fonts and installs
-the result on this machine. The preview image is `styles/preview/sample.png`, rendered from `test/sample.md`.
+Only want the extension, without the Claude bridge? Install the `.vsix` alone:
+`code --install-extension markdown-live-preview-editor-claude-0.4.0.vsix`.
 
-The patched extension also allows embedded fonts in the editor's security policy.
-Without that, the original extension would block them.
+## Theme and font
+
+`thai-readable.css` sets the body text in Sarabun at 16.5px with 1.8 line spacing, which
+leaves room for Thai tone and vowel marks. It also styles headings, quotes, tables and
+code, and shortens blank lines. Sarabun is embedded in the CSS, so nothing needs to be
+installed:
+- Sarabun is © 2018 The Sarabun Project Authors, under the SIL Open Font License 1.1 (`fonts/OFL.txt`).
+- The `.ttf` files in `fonts/` are there if you also want the font system-wide.
+
+To change the theme, edit `styles/src/thai-readable.theme.css` and rebuild. If you don't
+want your edits overwritten by updates, save them as a CSS theme of your own in the sidebar.
+The preview image is rendered from `test/sample.md`.
 
 ## How it works
 
@@ -111,15 +87,14 @@ build. In that case the anchors in `patch.js` must be updated.
 ## Notes
 
 - Selecting text saves the file.
-- The Windows hook has not been tested on Windows yet.
+- The Windows installer and hook have not been tested on Windows yet. Please open an issue if one fails.
 
 ## Building it yourself
 
 ```
 curl -L -o upstream/t-shoot.markdown-live-preview-editor-0.4.0.vsix \
   https://marketplace.visualstudio.com/_apis/public/gallery/publishers/t-shoot/vsextensions/markdown-live-preview-editor/0.4.0/vspackage
-./build.sh
-python3 styles/build_style.py
+./build.sh          # builds the theme, applies patch.js, packages the .vsix
 ```
 
 ## Licence
