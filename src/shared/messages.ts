@@ -106,6 +106,8 @@ export type PlusHostToEditorMessage =
 	| { type: 'plusEmbedResult'; requestId: number; src: string | null }
 	// The reader's text size, a factor over the theme's (setting mdLivePreview.plus.textScale).
 	| { type: 'plusTextScale'; scale: number }
+	// The next externalUpdate came from disk (Claude, git, …): show it as tracked changes.
+	| { type: 'plusTrackNext' }
 	| { type: 'plusAnchors'; requestId: number; anchors: PlusAnchor[] }
 	| { type: 'plusInsertFootnote' }
 	// `range` (document offsets) overrides the selection — used by tests and by

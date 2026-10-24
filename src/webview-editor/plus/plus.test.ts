@@ -372,3 +372,42 @@ describe('pipes inside math in tables', () => {
 		expect(readCellSpans(state, tables[0].getChild('TableRow')!).map((c) => c.text)).toEqual(['$5', '$10']);
 	});
 });
+
+describe('word diff for tracked changes', () => {
+	it('finds a replaced word in English', async () => {
+		const { diffWords } = await import('../../shared/plusDiff');
+		const after = 'The quick red fox jumps.';
+		const hunks = diffWords('The quick brown fox jumps.', after);
+		expect(hunks).toHaveLength(1);
+		expect(after.slice(hunks[0].from, hunks[0].to)).toBe('red');
+		expect(hunks[0].deleted).toBe('brown');
+	});
+
+	it('segments Thai into words, so a change is a word, not a line', async () => {
+		const { diffWords } = await import('../../shared/plusDiff');
+		const after = 'ระบบจะรายงานค่าที่ถูกต้อง';
+		const hunks = diffWords('ระบบจะรายงานค่าที่ไม่มีอยู่จริง', after);
+		expect(hunks.length).toBeGreaterThan(0);
+		const inserted = hunks.map((h) => after.slice(h.from, h.to)).join('|');
+		expect(inserted).toContain('ถูกต้อง');
+		expect(after.slice(0, hunks[0].from)).toContain('ระบบ');
+	});
+
+	it('pure insertion and pure deletion', async () => {
+		const { diffWords } = await import('../../shared/plusDiff');
+		expect(diffWords('a c', 'a b c')).toEqual([{ from: 2, to: 4, deleted: '' }]);
+		const del = diffWords('a b c', 'a c');
+		expect(del).toHaveLength(1);
+		expect(del[0].from).toBe(del[0].to);
+		expect(del[0].deleted.trim()).toBe('b');
+	});
+
+	it('merges changes separated by one space', async () => {
+		const { diffWords } = await import('../../shared/plusDiff');
+		const after = 'x NEW WORDS y';
+		const hunks = diffWords('x old words y', after);
+		expect(hunks).toHaveLength(1);
+		expect(after.slice(hunks[0].from, hunks[0].to)).toBe('NEW WORDS');
+		expect(hunks[0].deleted).toBe('old words');
+	});
+});

@@ -548,6 +548,11 @@
           "minimum": 0.7,
           "maximum": 2,
           "description": "md-live-preview-plus: text size in the Live Preview, as a factor over the CSS theme's own size (1 = as the theme sets it). Changed by Larger Text / Smaller Text in the right-click menu."
+        },
+        "mdLivePreview.plus.trackExternalChanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "md-live-preview-plus: when an open note changes on disk (Claude or another program writing it, a git checkout), show the changes in the Live Preview — insertions green, deletions struck through — to keep or undo one by one."
         }
       }
     },

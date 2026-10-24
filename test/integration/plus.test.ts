@@ -100,3 +100,53 @@ suite('md-live-preview-plus text size', () => {
 		assert.strictEqual(config().get('plus.textScale'), 1);
 	});
 });
+
+suite('md-live-preview-plus tracked changes', () => {
+	let file: vscode.Uri;
+	setup(async () => {
+		const folder = vscode.workspace.workspaceFolders![0];
+		file = vscode.Uri.joinPath(folder.uri, `track-${Date.now()}.md`);
+		await vscode.workspace.fs.writeFile(file, new TextEncoder().encode('# T\n\nThe quick brown fox.\n'));
+	});
+	teardown(async () => {
+		await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+		try {
+			await vscode.workspace.fs.delete(file);
+		} catch {
+			// gone
+		}
+	});
+
+	function nextChange(): Promise<vscode.TextDocumentChangeEvent> {
+		return new Promise((resolve, reject) => {
+			const timer = setTimeout(() => reject(new Error('no change event')), 8000);
+			const sub = vscode.workspace.onDidChangeTextDocument((e) => {
+				if (e.document.uri.toString() !== file.toString() || !e.contentChanges.length) return;
+				clearTimeout(timer);
+				sub.dispose();
+				resolve(e);
+			});
+		});
+	}
+
+	test('a write to disk arrives as a change with no reason and a clean document', async () => {
+		await vscode.commands.executeCommand('vscode.openWith', file, 'mdLivePreview.editor');
+		await new Promise((resolve) => setTimeout(resolve, 1500));
+		const event = nextChange();
+		await vscode.workspace.fs.writeFile(file, new TextEncoder().encode('# T\n\nThe quick red fox.\n'));
+		const e = await event;
+		assert.strictEqual(e.reason, undefined);
+		assert.strictEqual(e.document.isDirty, false, 'a reload from disk should leave the document clean');
+	});
+
+	test('an edit made inside VS Code leaves the document dirty, so it is not tracked', async () => {
+		const document = await vscode.workspace.openTextDocument(file);
+		const event = nextChange();
+		const edit = new vscode.WorkspaceEdit();
+		edit.insert(file, new vscode.Position(2, 0), 'typed ');
+		await vscode.workspace.applyEdit(edit);
+		const e = await event;
+		assert.strictEqual(e.document.isDirty, true);
+		await document.save();
+	});
+});

@@ -722,3 +722,61 @@ test('text size: the host\'s factor scales the reading column, and 1 restores it
 	await postToWebview(page, { type: 'plusTextScale', scale: 1 });
 	await expect.poll(size).toBeCloseTo(20, 1);
 });
+
+test.describe('tracked changes from outside the editor', () => {
+	const DOC = '# T\n\nThe quick brown fox jumps.\n\nEnd.\n';
+	const external = (page: Page, from: number, to: number, insert: string, tracked = true) =>
+		page.evaluate(
+			([f, t, i, tr]) => {
+				if (tr) window.dispatchEvent(new MessageEvent('message', { data: { type: 'plusTrackNext' } }));
+				window.dispatchEvent(new MessageEvent('message', { data: { type: 'externalUpdate', changes: [{ from: f, to: t, insert: i }], version: 2 } }));
+			},
+			[from, to, insert, tracked] as const,
+		);
+	// VS Code reports a reload as a whole-line replacement; the editor narrows it down.
+	const lineFrom = DOC.indexOf('The quick');
+	const lineTo = DOC.indexOf('jumps.') + 'jumps.'.length;
+
+	test('a change from disk shows word by word, with a bar', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await external(page, lineFrom, lineTo, 'The quick red fox jumps high.');
+		await expect(page.locator('.mlp-track-ins')).toHaveText(['red', ' high']);
+		await expect(page.locator('.mlp-track-del')).toHaveText(['brown']);
+		await expect(page.locator('.mlp-track-bar-label')).toHaveText('2 changes from outside the editor');
+	});
+
+	test('✓ keeps a change, ✗ undoes it through an ordinary edit', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await external(page, lineFrom, lineTo, 'The quick red fox jumps high.');
+		await page.locator('.mlp-track-controls').first().locator('button', { hasText: '✗' }).click();
+		// "red" is undone back to "brown"; " high" is still pending.
+		await expect(page.locator('.mlp-track-ins')).toHaveText([' high']);
+		await expect(page.locator('.mlp-track-del')).toHaveCount(0);
+		await expect(page.locator('.cm-content')).toContainText('The quick brown fox jumps high');
+		await page.locator('.mlp-track-controls').first().locator('button', { hasText: '✓' }).click();
+		await expect(page.locator('.mlp-track-bar')).toHaveCount(0);
+		await expect(page.locator('.mlp-track-ins')).toHaveCount(0);
+		// The undo went to the host as an edit (flushed after 250 ms), so it reaches the file.
+		await expect.poll(async () => (await posted(page)).filter((m) => m.type === 'edit').length).toBeGreaterThan(0);
+	});
+
+	test('Reject all restores the text; an untracked update is not marked', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await external(page, lineFrom, lineTo, 'A slow red fox jumps.');
+		await page.locator('.mlp-track-bar button', { hasText: 'Reject all' }).click();
+		await expect(page.locator('.cm-content')).toContainText('The quick brown fox jumps.');
+		await expect(page.locator('.mlp-track-bar')).toHaveCount(0);
+		await external(page, DOC.indexOf('End.'), DOC.indexOf('End.') + 4, 'Fin.', false);
+		await expect(page.locator('.cm-content')).toContainText('Fin.');
+		await expect(page.locator('.mlp-track-ins')).toHaveCount(0);
+	});
+
+	test('a change inside a table shows the table as source so it can be seen', async ({ page }) => {
+		const TABLE = '# T\n\n| a | b |\n|---|---|\n| 1 | old |\n\nEnd.\n';
+		await mountEditor(page, TABLE);
+		const from = TABLE.indexOf('| 1 |');
+		await external(page, from, from + '| 1 | old |'.length, '| 1 | new |');
+		await expect(page.locator('.mlp-track-ins')).toHaveText('new');
+		await expect(page.locator('.mlp-table-wrap')).toHaveCount(0);
+	});
+});

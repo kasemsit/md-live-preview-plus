@@ -6,6 +6,7 @@ import { resolveLinkTarget } from '../shared/linkTarget';
 import { isPathInside } from '../shared/pathContainment';
 import { handlePlusMessage, trackSession, takePendingJump } from './plus';
 import { textScale } from './plus/textScale';
+import { isTrackedChange } from './plus/trackChanges';
 
 /**
  * Largest `.drawio` file that will be read and parsed.
@@ -325,6 +326,8 @@ export class DocumentSyncSession {
 			to: c.rangeOffset + c.rangeLength,
 			insert: c.text,
 		}));
+		// md-live-preview-plus: a reload from disk is shown as tracked changes.
+		if (isTrackedChange(event)) this.post({ type: 'plusTrackNext' });
 		this.post({ type: 'externalUpdate', changes, version: event.document.version });
 		this.scheduleRehighlight();
 	}

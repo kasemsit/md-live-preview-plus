@@ -12,6 +12,7 @@ import { underlineExtension } from './underline';
 import { embedPlugin } from './embeds';
 import { spacingPlugin } from './spacing';
 import { reapplyTextScale, setTextScale } from './textScale';
+import { beforeExternalUpdate, trackChangesExtension, trackNextUpdate } from './trackChanges';
 import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
@@ -36,6 +37,7 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 		underlineExtension,
 		embedPlugin,
 		spacingPlugin,
+		trackChangesExtension,
 		selectionReporter(post),
 		contextMenuExtension(post),
 		plusCompletion,
@@ -45,6 +47,12 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 /** Handles a plus message from the host. Returns true when it was one. */
 export function handlePlusHostMessage(view: EditorView | undefined, message: HostToEditorMessage): boolean {
 	if (handlePlusReply(message)) return true;
+	if (message.type === 'plusTrackNext') {
+		trackNextUpdate();
+		return true;
+	}
+	// Not ours: the editor applies it; tracked changes are worked out once it has.
+	if (message.type === 'externalUpdate') beforeExternalUpdate(view, message.changes);
 	if (message.type === 'plusTextScale') {
 		setTextScale(view, message.scale);
 		return true;
