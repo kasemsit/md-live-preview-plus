@@ -14,6 +14,8 @@ const HOST_STUB = [
 	"window.mlpNonce = 'test';",
 	"window.mlpMermaidChunkUri = 'https://example.invalid/mermaid-chunk.js';",
 	"window.mlpAwsShapesUri = 'https://example.invalid/aws4-shapes.json';",
+	"window.mlpKatexChunkUri = 'https://example.invalid/katex-chunk.js';",
+	"window.mlpKatexBase = 'https://example.invalid/katex/';",
 	'window.__posted = [];',
 	'window.acquireVsCodeApi = function () {',
 	'  return {',
@@ -53,6 +55,18 @@ export async function mountEditor(page: Page, text: string, locale = 'en'): Prom
 			body: readFileSync(join(ROOT, 'dist', 'mermaid-chunk.js'), 'utf8'),
 		}),
 	);
+	// md-live-preview-plus: KaTeX bundle, stylesheet and fonts, from dist/.
+	await page.route('**/katex-chunk.js', (route) =>
+		route.fulfill({ contentType: 'application/javascript', body: readFileSync(join(ROOT, 'dist', 'katex-chunk.js'), 'utf8') }),
+	);
+	await page.route('**/katex/**', (route) => {
+		const rel = new URL(route.request().url()).pathname.replace(/^.*\/katex\//, '');
+		const isCss = rel.endsWith('.css');
+		route.fulfill({
+			contentType: isCss ? 'text/css' : 'font/woff2',
+			body: readFileSync(join(ROOT, 'dist', 'katex', ...rel.split('/'))),
+		});
+	});
 	await page.route('**/aws4-shapes.json', (route) =>
 		route.fulfill({
 			contentType: 'application/json',

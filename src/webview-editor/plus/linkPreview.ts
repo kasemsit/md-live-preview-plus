@@ -6,6 +6,7 @@ import { cellInlineHooks } from '../livePreviewPlugin';
 import { previewLink } from './hostRequests';
 import { insideWikilink } from '../../shared/plusWikilinks';
 import { calloutStyle } from './callouts';
+import { renderMathInto } from './math';
 
 /**
  * Hover preview for wikilinks, like Obsidian's page preview: resting the
@@ -67,6 +68,18 @@ export function renderMarkdownBlocks(parent: HTMLElement, text: string): void {
 		if (!line.trim()) {
 			para = null;
 			i++;
+			continue;
+		}
+		if (/^\s*\$\$/.test(line)) {
+			// Display math: one line, or $$ lines around it.
+			let end = i;
+			if (!/\$\$.*\$\$\s*$/.test(line.trim())) {
+				end = i + 1;
+				while (end < lines.length && !/\$\$\s*$/.test(lines[end])) end++;
+			}
+			const tex = lines.slice(i, end + 1).join('\n').trim().replace(/^\$\$/, '').replace(/\$\$$/, '');
+			renderMathInto(add('div', 'mlp-math mlp-math-display'), tex.trim(), true);
+			i = end + 1;
 			continue;
 		}
 		const h = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);

@@ -384,3 +384,61 @@ test('a real mouse drag across rendered cells reaches Claude as source', async (
 		.poll(async () => (await posted(page)).filter((m) => m.type === 'plusSelection').at(-1))
 		.toMatchObject({ text: 'Alice | OK', startLine: 5, endLine: 5 });
 });
+
+test.describe('math', () => {
+	const DOC = [
+		'# T',
+		'',
+		'Inline $a_i$ and $b_j$ here, but $5 and $10 is money.',
+		'',
+		'$$\\sum_{i=1}^n x_i$$',
+		'',
+		'where',
+		'$$',
+		'\\frac{a}{b} = c',
+		'$$',
+		'',
+		'| term | value |',
+		'|---|---|',
+		'| $\\alpha$ | 1 |',
+		'',
+		'End.',
+	].join('\n');
+
+	test('inline math renders, and underscores in it are not emphasis', async ({ page }) => {
+		await mountEditor(page, DOC);
+		const line = page.locator('.cm-line').filter({ hasText: 'money' });
+		await expect(line.locator('.mlp-math .katex')).toHaveCount(2);
+		await expect(line.locator('em')).toHaveCount(0);
+		await expect(line).toContainText('$5 and $10 is money.');
+	});
+
+	test('display math renders on one line and as a $$ block', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await expect(page.locator('.cm-line .mlp-math-display .katex-display')).toHaveCount(1);
+		const block = page.locator('.mlp-math-block');
+		await expect(block.locator('.katex-display')).toHaveCount(1);
+		await expect(block.locator('.mfrac')).toHaveCount(1);
+		// The source is gone from the lines (KaTeX keeps the TeX only in hidden MathML).
+		await expect(page.locator('.cm-line').filter({ hasText: '\\frac{a}{b} = c' })).toHaveCount(0);
+	});
+
+	test('clicking a $$ block shows its source', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await page.locator('.mlp-math-block').click();
+		await expect(page.locator('.cm-line').filter({ hasText: '\\frac{a}{b} = c' })).toHaveCount(1);
+		await expect(page.locator('.mlp-math-block')).toHaveCount(0);
+	});
+
+	test('math renders inside table cells', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await expect(page.locator('.mlp-table-wrap td .mlp-math .katex')).toHaveCount(1);
+	});
+
+	test('the caret inside inline math shows its source', async ({ page }) => {
+		await mountEditor(page, DOC);
+		const line = page.locator('.cm-line').filter({ hasText: 'money' });
+		await line.locator('.mlp-math').first().click();
+		await expect(page.locator('.cm-line').filter({ hasText: 'money' })).toContainText('$a_i$');
+	});
+});

@@ -2,6 +2,8 @@ import { parser as baseMarkdownParser, Table, TaskList, Strikethrough, Autolink 
 import type { SyntaxNode, Tree } from '@lezer/common';
 import { withInlinePasses } from './plus/inlineExtras';
 import { isCitationAt } from '../shared/plusWikilinks';
+import { PlusMath } from './plus/mathSyntax';
+import { renderMathInto } from './plus/math';
 
 // A table cell's content is plain text as far as CodeMirror is concerned — the
 // rich TableWidget builds its own DOM outside the editor, so the live-preview
@@ -17,7 +19,8 @@ import { isCitationAt } from '../shared/plusWikilinks';
 // parser the editor already uses for the document removes that whole class of
 // divergence by construction: whatever the parser says the markup is, is what
 // gets drawn.
-const cellParser = baseMarkdownParser.configure([Table, TaskList, Strikethrough, Autolink]);
+// plus: PlusMath, so `$…$` in a cell is one math node rather than emphasis-prone text.
+const cellParser = baseMarkdownParser.configure([Table, TaskList, Strikethrough, Autolink, PlusMath]);
 
 /** Inline nodes rendered as a wrapper element around their own children. */
 const WRAPPER_TAGS: Record<string, { tag: string; className: string }> = {
@@ -160,6 +163,14 @@ function renderNode(parent: HTMLElement, node: SyntaxNode, src: string, hooks: C
 		}
 		case 'Escape': {
 			appendText(parent, unescapePunctuation(src.slice(node.from, node.to)));
+			return;
+		}
+		case 'InlineMath': {
+			// plus: rendered by KaTeX (plus/math.ts).
+			const span = document.createElement('span');
+			span.className = 'mlp-math';
+			renderMathInto(span, src.slice(node.from + 1, node.to - 1), false);
+			parent.appendChild(span);
 			return;
 		}
 		default: {

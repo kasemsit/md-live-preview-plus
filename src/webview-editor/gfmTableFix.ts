@@ -1,5 +1,6 @@
 import { TaskList, Strikethrough, Autolink, type BlockContext, type Line, type LeafBlock, type MarkdownExtension } from '@lezer/markdown';
 import { PlusTable } from './plus/table';
+import { PlusMath } from './plus/mathSyntax';
 import { insideWikilink } from '../shared/plusWikilinks';
 
 const delimiterLine = /^\|?(\s*:?-+:?\s*\|)+(\s*:?-+:?\s*)?$/;
@@ -83,5 +84,6 @@ const fixIndentedTableInterrupt: MarkdownExtension = {
 	],
 };
 
-// plus: `PlusTable` replaces @lezer/markdown's `Table` (wikilink pipes, tables in quotes).
-export const GFM: MarkdownExtension[] = [fixIndentedTableInterrupt, PlusTable, TaskList, Strikethrough, Autolink];
+// plus: `PlusTable` replaces @lezer/markdown's `Table` (wikilink pipes, tables in quotes);
+// `PlusMath` adds $…$ / $$…$$ math nodes.
+export const GFM: MarkdownExtension[] = [fixIndentedTableInterrupt, PlusTable, TaskList, Strikethrough, Autolink, PlusMath];

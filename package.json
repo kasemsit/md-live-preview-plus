@@ -2,7 +2,7 @@
   "name": "markdown-live-preview-editor-claude",
   "displayName": "Markdown Live Preview Editor (Plus)",
   "description": "md-live-preview-plus: wikilinks with completion, callouts, footnotes, tables in quotes, and Claude Code sees the selected text. Edit the preview itself, Obsidian-style — with Mermaid and draw.io diagrams rendered inline. The only VS Code Markdown editor that draws .drawio files.",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "publisher": "local",
   "license": "MIT",
   "icon": "media/icon-128.png",
@@ -284,6 +284,7 @@
     "@shikijs/engine-javascript": "^1.24.0",
     "@shikijs/langs": "^1.24.0",
     "@shikijs/themes": "^1.24.0",
+    "katex": "^0.16.47",
     "mermaid": "^11.4.1",
     "yaml": "^2.9.0"
   }

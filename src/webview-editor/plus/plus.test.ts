@@ -308,3 +308,34 @@ describe('backlink index text', () => {
 		expect(keysForNote('References/@smith2020.md')).toEqual(['references/@smith2020', '@smith2020']);
 	});
 });
+
+describe('math syntax', () => {
+	function nodes(doc: string, name: string): string[] {
+		const state = EditorState.create({ doc, extensions: [markdown({ extensions: GFM })] });
+		const tree = ensureSyntaxTree(state, state.doc.length, 5000)!;
+		const out: string[] = [];
+		tree.iterate({ enter: (n) => void (n.name === name && out.push(state.sliceDoc(n.from, n.to))) });
+		return out;
+	}
+
+	it('inline math, Pandoc rules: money and spaced dollars stay text', () => {
+		expect(nodes('a $x_1$ and $y_2$; $5 and $10; $ x $', 'InlineMath')).toEqual(['$x_1$', '$y_2$']);
+	});
+
+	it('underscores inside math are not emphasis', () => {
+		expect(nodes('Inline $a_i$ and $b_j$ here', 'Emphasis')).toEqual([]);
+	});
+
+	it('display math on one line, and as a $$ block that may follow text directly', () => {
+		expect(nodes('$$x^2$$\n', 'BlockMath')).toEqual(['$$x^2$$']);
+		expect(nodes('where\n$$\n\\frac{a}{b}\n$$\nafter\n', 'BlockMath')).toEqual(['$$\n\\frac{a}{b}\n$$']);
+	});
+
+	it('a line holding $$x$$ and more text is not a block', () => {
+		expect(nodes('$$x$$ and text\n\nnext\n', 'BlockMath')).toEqual([]);
+	});
+
+	it('a $$ block inside a list item stays inside it', () => {
+		expect(nodes('- item\n  $$\n  y\n  $$\n- next\n', 'BlockMath')).toEqual(['$$\n  y\n  $$']);
+	});
+});

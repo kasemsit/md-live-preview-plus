@@ -120,6 +120,9 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 		const awsShapesUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'aws4-shapes.json'),
 		);
+		// md-live-preview-plus: KaTeX, fetched by the webview only when a document has math.
+		const katexChunkUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'katex-chunk.js'));
+		const katexBase = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'katex'));
 		const nonce = getNonce();
 
 		return `<!DOCTYPE html>
@@ -139,6 +142,8 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 		window.mlpAwsShapesUri = ${JSON.stringify(awsShapesUri.toString())};
 		window.mlpNonce = ${JSON.stringify(nonce)};
 		window.mlpLocale = ${JSON.stringify(vscode.env.language)};
+		window.mlpKatexChunkUri = ${JSON.stringify(katexChunkUri.toString())};
+		window.mlpKatexBase = ${JSON.stringify(`${katexBase.toString()}/`)};
 	</script>
 	<script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

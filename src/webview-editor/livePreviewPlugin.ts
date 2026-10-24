@@ -13,6 +13,7 @@ import { createCodeModeButton, createCopyCodeButton, createRenderModeButton } fr
 import { insertRow, insertColumn, renderTableMarkdown, type TableEditModel } from './tableEdit';
 import { t } from '../shared/i18n';
 import { insideWikilink, isCitationAt } from '../shared/plusWikilinks';
+import { mathBlockReplaced } from './plus/mathSyntax';
 
 const HEADING_LINE_CLASS: Record<string, string> = {
 	ATXHeading1: 'mlp-line-h1',
@@ -1317,6 +1318,12 @@ export function buildTableWidget(state: EditorState, node: SyntaxNodeRef): Table
 export function blockReplacedLines(state: EditorState, item: SyntaxNode): Set<number> {
 	const lines = new Set<number>();
 	for (let child = item.firstChild; child; child = child.nextSibling) {
+		// plus: a multi-line $$ math block is block-replaced too (plus/math.ts).
+		if (child.name === 'BlockMath') {
+			const math = mathBlockReplaced(state, child);
+			if (math) for (let n = state.doc.lineAt(math.from).number; n <= state.doc.lineAt(math.to).number; n++) lines.add(n);
+			continue;
+		}
 		if (child.name !== 'Table') continue;
 		if (isBlockRevealed(state.doc.lineAt(child.from).from)) continue;
 		const range = alignedBlockRange(state, child.from, child.to);

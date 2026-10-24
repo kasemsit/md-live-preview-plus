@@ -27,10 +27,17 @@ const css = option('--css') ? fs.readFileSync(option('--css'), 'utf8') : '';
 	const page = await browser.newPage({ viewport: { width: 900, height: 30000 } });
 	page.on('pageerror', (e) => console.log('PAGEERROR', e.message));
 	const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+	// KaTeX is fetched on demand; serve it, its stylesheet and fonts from dist/.
+	await page.route('https://render.invalid/**', (route) => {
+		const rel = new URL(route.request().url()).pathname.slice(1);
+		const file = rel === 'katex-chunk.js' ? 'dist/katex-chunk.js' : `dist/${rel}`;
+		route.fulfill({ body: fs.readFileSync(path.join(ROOT, file)), contentType: rel.endsWith('.js') ? 'application/javascript' : rel.endsWith('.css') ? 'text/css' : 'font/woff2' });
+	});
 	await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
 html,body{margin:0;background:#1e1e1e}#mlp-root{height:100%}
 ${read('media/webview-ui.css')}${read('media/webview-editor-theme.css')}${read('media/plus.css')}</style></head>
-<body><div id="mlp-root"></div><script>window.__posted=[];window.acquireVsCodeApi=()=>({postMessage:m=>window.__posted.push(m),getState:()=>null,setState:()=>{}});</script>
+<body><div id="mlp-root"></div><script>window.__posted=[];window.acquireVsCodeApi=()=>({postMessage:m=>window.__posted.push(m),getState:()=>null,setState:()=>{}});
+window.mlpKatexChunkUri='https://render.invalid/katex-chunk.js';window.mlpKatexBase='https://render.invalid/katex/';</script>
 <script>${read('dist/webview-editor.js').replace(/<\/script>/gi, '<\\/script>')}</script></body></html>`);
 	await page.evaluate(
 		([text, theme]) => window.postMessage({ type: 'init', text, version: 1, css: theme, codeTheme: 'dark-plus', baseUri: 'https://example.invalid/' }, '*'),
@@ -50,6 +57,14 @@ ${read('media/webview-ui.css')}${read('media/webview-editor-theme.css')}${read('
 			callouts: q('.cm-line.mlp-callout-first').map((l) => `${[...l.classList].find((c) => c.startsWith('mlp-co-'))}: ${l.textContent.slice(0, 50)}`),
 			footnotes: { refs: q('.mlp-fn-ref').length, defs: q('.cm-line.mlp-fn-def').length, firstRefs: q('.mlp-fn-ref').slice(0, 8).map((s) => s.textContent) },
 			blockIds: q('.mlp-block-id').length,
+			math: {
+				inline: q('.cm-line .mlp-math:not(.mlp-math-display)').length,
+				display: q('.mlp-math-display').length,
+				rendered: q('.mlp-math .katex').length,
+				errors: q('.mlp-math .katex-error').map((e) => e.getAttribute('title')?.slice(0, 120)),
+				// Lines still showing a "$" outside rendered math: money, or math the parser missed.
+				leftoverDollar: q('.cm-line').map((l) => { const c = l.cloneNode(true); c.querySelectorAll('.mlp-math').forEach((m) => m.remove()); return c.textContent; }).filter((t) => t.includes('$')).map((t) => t.slice(0, 110)),
+			},
 			leftoverBrackets: q('.cm-line').filter((l) => /\[\[|\]\]/.test(l.textContent)).map((l) => l.textContent.slice(0, 90)),
 			lines: withLines ? q('.cm-line').map((l) => `${l.className} | ${l.textContent.slice(0, 80)}`) : undefined,
 		};

@@ -7,6 +7,7 @@ import { footnotePlugin, insertFootnote } from './footnotes';
 import { blockIdPlugin } from './blockIds';
 import { commentPlugin } from './comments';
 import { citationPlugin } from './citations';
+import { mathExtension } from './math';
 import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
@@ -26,6 +27,7 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 		blockIdPlugin,
 		commentPlugin,
 		citationPlugin,
+		mathExtension,
 		selectionReporter(post),
 		plusCompletion,
 	];

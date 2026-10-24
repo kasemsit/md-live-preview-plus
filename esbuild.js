@@ -79,6 +79,25 @@ const webviewMermaidConfig = {
 	plugins: [esbuildProblemMatcherPlugin],
 };
 
+/**
+ * md-live-preview-plus: KaTeX for `$…$` / `$$…$$`, loaded on demand like the
+ * Mermaid chunk (see webview-editor/plus/math.ts); its CSS and fonts are copied
+ * to dist/katex/ by plus/build-katex.js.
+ */
+/** @type {import('esbuild').BuildOptions} */
+const webviewKatexConfig = {
+	entryPoints: ['src/webview-katex/main.ts'],
+	bundle: true,
+	outfile: 'dist/katex-chunk.js',
+	platform: 'browser',
+	format: 'iife',
+	target: 'es2022',
+	sourcemap: !production,
+	minify: production,
+	logLevel: 'silent',
+	plugins: [esbuildProblemMatcherPlugin],
+};
+
 /** @type {import('esbuild').BuildOptions} */
 const webviewSidebarConfig = {
 	entryPoints: ['src/webview-sidebar/main.ts'],
@@ -147,11 +166,13 @@ async function main() {
 	await buildAwsShapes();
 	// md-live-preview-plus: the bundled Thai theme, fonts embedded.
 	require('./plus/build-theme.js').buildTheme();
+	require('./plus/build-katex.js').buildKatexAssets();
 
 	const configs = [
 		extensionConfig,
 		webviewEditorConfig,
 		webviewMermaidConfig,
+		webviewKatexConfig,
 		webviewSidebarConfig,
 		webviewPreviewConfig,
 		webviewOutlineConfig,

@@ -28,6 +28,7 @@ This fork adds:
   - **Insert Footnote** (`Ctrl+Alt+6`, or `Cmd+Alt+6` on macOS) adds the next number at the cursor and its definition at the end of the file.
 - **Block ids** (`… ^ma-32`) are dimmed rather than shown at full strength.
 - **HTML comments** (`<!-- … -->`) are tinted as notes to the writer.
+- **Math**: `$…$` and `$$…$$` render with KaTeX, in the text, in tables and in previews. Click a formula to edit its TeX.
 - **Claude Code sees your selection**: the exact Markdown source, its line numbers and the file path. A webview's selection is otherwise invisible to VS Code and to Claude.
   - The file is saved when you select, so the line numbers match the file on disk.
   - Text selected inside a rendered table is sent as the cells' Markdown source.
@@ -135,6 +136,7 @@ git fetch upstream && git merge upstream/main
 
 - **The code:** MIT, see `LICENSE`. It is t-shoot's licence, with this fork's copyright added for the changes.
 - **AWS shapes (from upstream):** their own terms, see `THIRD-PARTY-NOTICES.md` and `LICENSE-SHAPES`.
+- **KaTeX** (bundled for math, fonts included): MIT, © Khan Academy and other contributors, as its npm package states; listed in `THIRD-PARTY-NOTICES.md`.
 - **Sarabun:** © 2018 The Sarabun Project Authors, SIL Open Font License 1.1, see `plus/fonts/OFL.txt`.
   - It is embedded in the theme.
   - The `.ttf` files in `plus/fonts/` are there if you want the font system-wide.

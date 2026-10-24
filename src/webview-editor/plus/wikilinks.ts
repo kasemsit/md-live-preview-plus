@@ -14,7 +14,7 @@ import { isUnresolved, onNoteIndexChange, refreshNoteIndex } from './noteIndex';
  * the workspace (Obsidian semantics) — see src/editor/plus/wikiOpen.ts.
  */
 
-const SOURCE_NODES = /^(FencedCode|CodeBlock|InlineCode|HTMLBlock|CommentBlock)$/;
+const SOURCE_NODES = /^(FencedCode|CodeBlock|InlineCode|HTMLBlock|CommentBlock|InlineMath|BlockMath)$/;
 
 /**
  * True where Markdown is shown as source rather than rendered: code, raw HTML,

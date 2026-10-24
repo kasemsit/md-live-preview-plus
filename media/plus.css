@@ -91,6 +91,16 @@
 }
 .mlp-comment-marker { opacity: 0.45; }
 
+/* ── Math ($…$ inline, $$…$$ display), rendered by KaTeX ── */
+.mlp-math .katex { font-size: 1.08em; }
+.mlp-math-display { display: block; text-align: center; margin: 0.3em 0; overflow-x: auto; overflow-y: hidden; }
+.mlp-math-display .katex-display { margin: 0; }
+.mlp-math-block { padding: 0.35em 0; cursor: text; }
+.mlp-math-block:hover { background: rgba(127, 127, 127, 0.06); border-radius: 4px; }
+/* Before KaTeX has loaded (first formula of a session), or if it failed. */
+.mlp-math-pending, .mlp-math-failed { font-family: var(--vscode-editor-font-family, monospace); font-size: 0.9em; opacity: 0.65; }
+.mlp-math-failed { text-decoration: underline wavy rgba(220, 38, 38, 0.6); }
+
 /* ── Block ids (… ^ma-32): a link target, not prose ── */
 .mlp-block-id { opacity: 0.4; font-size: 0.85em; }
 

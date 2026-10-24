@@ -2,6 +2,18 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
+## 0.4.6
+
+- **Math**, rendered with KaTeX, as Obsidian and Pandoc write it:
+  - `$…$` inline;
+  - `$$…$$` on one line;
+  - `$$` blocks over several lines, which may follow a line of text directly.
+- **Editing math**: click a formula, or move the caret into it, to edit its TeX.
+- **Math is part of the parser**, so `$a_i$ and $b_j$` no longer turns into italics between the two formulas.
+  - Pandoc's rules keep money as text: `$5 and $10` is not math.
+- **Math renders in table cells, footnote cards and link previews too.**
+- **KaTeX loads only when a document has math.** It ships in the extension; nothing is fetched from the internet.
+
 ## 0.4.5
 
 - **Backlinks view** in the Markdown Live Preview sidebar: the notes that link to the one you are reading, each with the line that does it. Click a line to open that note there.
