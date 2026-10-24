@@ -298,6 +298,106 @@ catch(err){mlpLog("error "+(err&&err.stack||err));vs.window.showWarningMessage("
   }
 }
 
+// 10. Footnotes [^label] / [^label]: text (Obsidian / Pandoc / GFM).
+//    Upstream parses "[^1]" as a reference link (an <a> with an empty href) and
+//    "[^1]: …" as link syntax, so neither works. Both Link renderers now leave
+//    "[^…]" alone, and a ViewPlugin renders:
+//    - references as superscript numbers (numbered by first citation), with a hover
+//      card showing the footnote (inline markdown, wikilinks included); a click scrolls
+//      to the definition and flashes it;
+//    - definitions as "n." + a back-link "↩" to the first citation, in a smaller line.
+//    Raw source shows when the cursor is on the line; undefined references stay raw.
+//    Table cells get the same superscripts through renderInlineInto (Xl).
+{
+  const p = path.join(dir, "dist/webview-editor.js");
+  let s = fs.readFileSync(p, "utf8");
+  if (s.includes("mlpFnExt")) console.log("skip  dist/webview-editor.js footnotes (already patched)");
+  else {
+    const defs =
+      'var mlpFn={doc:null,defs:new Map,order:new Map,first:new Map,firstDefLine:0};' +
+      'function mlpFnScan(st){if(mlpFn.doc===st.doc)return mlpFn;const doc=st.doc,defs=new Map,order=new Map,first=new Map;let firstDefLine=0;' +
+      'for(let k=1;k<=doc.lines;k++){const L=doc.line(k),m=/^\\[\\^([^\\]\\s]+)\\]:[ \\t]?(.*)$/.exec(L.text);if(m){let t=m[2],j=k+1;' +
+      'while(j<=doc.lines&&/^( {2,}|\\t)\\S/.test(doc.line(j).text)){t+=" "+doc.line(j).text.trim();j++}' +
+      'defs.set(m[1],{from:L.from,line:k,text:t});firstDefLine||(firstDefLine=k);continue}' +
+      '}for(let k=1;k<=doc.lines;k++){const L=doc.line(k);if(/^\\[\\^[^\\]\\s]+\\]:/.test(L.text))continue;' +
+      'const re=/\\[\\^([^\\]\\s]+)\\]/g;let r;while(r=re.exec(L.text)){if(!defs.has(r[1]))continue;order.has(r[1])||order.set(r[1],order.size+1);first.has(r[1])||first.set(r[1],L.from+r.index)}}' +
+      'for(const k of defs.keys())order.has(k)||order.set(k,order.size+1);' +
+      'Object.assign(mlpFn,{doc,defs,order,first,firstDefLine});return mlpFn}' +
+      'function mlpFnJump(dom,pos){try{const v=R.findFromDOM(dom.closest(".cm-editor"));if(!v)return;v.dispatch({effects:R.scrollIntoView(pos,{y:"center"})});' +
+      'let tries=0;const go=()=>{try{const sc=v.scrollDOM,blk=v.lineBlockAt(pos),r=sc.getBoundingClientRect(),top=blk.top+v.documentTop-r.top+sc.scrollTop;if(top-sc.scrollTop<-5||top-sc.scrollTop>sc.clientHeight){++tries<12&&setTimeout(go,90);return}getComputedStyle(sc).position==="static"&&(sc.style.position="relative");const d=document.createElement("div");d.className="mlp-fn-flashbox";d.style.top=top+"px";d.style.height=blk.height+"px";sc.appendChild(d);setTimeout(()=>d.remove(),1500)}catch(_){++tries<12&&setTimeout(go,90)}};setTimeout(go,60)}catch(_){}}' +
+      'function mlpFnRefDom(label){const d=mlpFn.defs.get(label),n=mlpFn.order.get(label)||"?",w=document.createElement("span");w.className="mlp-fn";' +
+      'const a=document.createElement("sup");a.className="mlp-fn-ref";a.textContent=n;w.appendChild(a);' +
+      'if(d){const c=document.createElement("span");c.className="mlp-fn-pop";try{Xl(c,d.text,gy)}catch(_){c.textContent=d.text}w.appendChild(c);' +
+      'w.addEventListener("mouseenter",()=>{w.classList.add("mlp-fn-open");const r=a.getBoundingClientRect(),W=c.offsetWidth,H=c.offsetHeight,vw=document.documentElement.clientWidth;' +
+      'c.style.left=Math.max(8,Math.min(r.left-16,vw-W-8))+"px";c.style.top=(r.top-H-6>=8?r.top-H-6:r.bottom+6)+"px"});' +
+      'w.addEventListener("mouseleave",()=>w.classList.remove("mlp-fn-open"));' +
+      'a.addEventListener("mousedown",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation();mlpFnJump(a,d.from)})}return w}' +
+      'var mlpFnRefW=class extends ce{constructor(l,n,t){super();this.l=l;this.n=n;this.t=t}eq(o){return o.l===this.l&&o.n===this.n&&o.t===this.t}toDOM(){return mlpFnRefDom(this.l)}ignoreEvent(){return!0}};' +
+      'var mlpFnDefW=class extends ce{constructor(l,n,b){super();this.l=l;this.n=n;this.b=b}eq(o){return o.l===this.l&&o.n===this.n&&o.b===this.b}' +
+      'toDOM(){const w=document.createElement("span");w.className="mlp-fn-def-num";w.textContent=this.n+".";if(this.b>=0){const a=document.createElement("span");a.className="mlp-fn-back";a.textContent="\\u21a9";a.title="back to text";' +
+      'const b=this.b;a.addEventListener("mousedown",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation();mlpFnJump(a,b)});w.appendChild(a)}return w}ignoreEvent(){return!0}};' +
+      'function mlpFnExt(){function build(v){const st=v.state,F=mlpFnScan(st),out=[];if(!F.defs.size)return B.none;' +
+      'for(const{from,to}of v.visibleRanges){for(let pos=from;pos<=to;){const L=st.doc.lineAt(pos);pos=L.to+1;' +
+      'const dm=/^\\[\\^([^\\]\\s]+)\\]:[ \\t]?/.exec(L.text);' +
+      'if(dm&&F.defs.has(dm[1])){out.push(B.line({class:"mlp-fn-def"+(L.number===F.firstDefLine?" mlp-fn-def-first":"")}).range(L.from));' +
+      'if(!Zi(st,L.from,L.to))out.push(B.replace({widget:new mlpFnDefW(dm[1],F.order.get(dm[1])||"?",F.first.has(dm[1])?F.first.get(dm[1]):-1)}).range(L.from,L.from+dm[0].length));continue}' +
+      'if(Zi(st,L.from,L.to))continue;const re=/\\[\\^([^\\]\\s]+)\\]/g;let m;' +
+      'while(m=re.exec(L.text)){const s=L.from+m.index,e=s+m[0].length,d=F.defs.get(m[1]);if(!d||mlpInSrc(st,s))continue;' +
+      'out.push(B.replace({widget:new mlpFnRefW(m[1],F.order.get(m[1]),d.text)}).range(s,e))}}}return B.set(out,!0)}' +
+      'return Ne.fromClass(class{constructor(v){this.decorations=build(v)}update(u){(u.docChanged||u.viewportChanged||u.selectionSet)&&(this.decorations=build(u.view))}},{decorations:v=>v.decorations})}' +
+      'function mlpFnDom(root){try{if(!mlpFn.defs.size)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nodes=[];let n;' +
+      'while(n=w.nextNode())/\\[\\^[^\\]\\s]+\\]/.test(n.nodeValue)&&!n.parentElement.closest("code,.mlp-fn")&&nodes.push(n);' +
+      'for(const t of nodes){const f=document.createDocumentFragment();t.nodeValue.split(/(\\[\\^[^\\]\\s]+\\])/).forEach(part=>{const m=/^\\[\\^([^\\]\\s]+)\\]$/.exec(part);' +
+      'm&&mlpFn.defs.has(m[1])?f.append(mlpFnRefDom(m[1])):part&&f.append(part)});t.replaceWith(f)}}catch(_){}}';
+    const edits = [
+      ['c(pi,"postToHost");', null],                                   // definitions go here
+      ['mlpWikiExt(),', 'mlpWikiExt(),mlpFnExt(),'],                   // register the plugin
+      ['case"Link":{let m=p.node.getChildren("LinkMark");if(m.length<2)return;',
+       'case"Link":{if(e.sliceDoc(p.from,p.from+2)==="[^")return;let m=p.node.getChildren("LinkMark");if(m.length<2)return;'],
+      ['case"Link":{let{label:o,url:l,title:a}=uy(e,t),',
+       'case"Link":{if(t.slice(e.from,e.from+2)==="[^"){ws(i,xs(t.slice(e.from,e.to)));return}let{label:o,url:l,title:a}=uy(e,t),'],
+      ['Kf(i,Tv($v.parse(q)),q,t);mlpWikiPost(i,L)}', 'Kf(i,Tv($v.parse(q)),q,t);mlpWikiPost(i,L);mlpFnDom(i)}'],
+    ];
+    for (const [a] of edits) {
+      const n = s.split(a).length - 1;
+      if (n !== 1) throw new Error(`footnotes: anchor "${a.slice(0, 40)}" found ${n} times, expected 1`);
+    }
+    for (const [a, b] of edits) s = s.replace(a, b === null ? a + defs : b);
+    fs.writeFileSync(p, s);
+
+    const css = path.join(dir, "media/webview-editor-theme.css");
+    fs.appendFileSync(css, `
+/* Local patch (footnotes): superscript references with a hover card, numbered
+   definitions with a back-link, and a brief flash on the jump target. */
+.mlp-fn { position: relative; }
+.mlp-fn-ref {
+	color: var(--vscode-textLink-foreground, #2f6feb);
+	cursor: pointer; font-weight: 600; font-size: 0.72em; padding: 0 0.12em;
+}
+.mlp-fn-ref:hover { text-decoration: underline; }
+.mlp-fn-pop {
+	display: block; visibility: hidden; position: fixed; left: 0; top: 0; z-index: 1000;
+	width: max-content; max-width: min(32em, calc(100vw - 16px)); white-space: normal; text-indent: 0;
+	padding: 0.55em 0.8em; border-radius: 8px; font-size: 0.86em; line-height: 1.55; font-weight: 400;
+	color: var(--vscode-editorHoverWidget-foreground, var(--vscode-editor-foreground, #24292f));
+	background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background, #ffffff));
+	border: 1px solid var(--vscode-editorHoverWidget-border, rgba(128,128,128,0.35));
+	box-shadow: 0 6px 20px rgba(0,0,0,0.20);
+	pointer-events: none;
+}
+.mlp-fn.mlp-fn-open .mlp-fn-pop { visibility: visible; }
+.cm-line.mlp-fn-def { font-size: 0.88em; line-height: 1.55; padding-left: 2.2em !important; text-indent: -2.2em; }
+.cm-line.mlp-fn-def-first { border-top: 1px solid rgba(128,128,128,0.35); margin-top: 1.2em; padding-top: 0.8em !important; }
+.mlp-fn-def-num { display: inline-block; min-width: 2.2em; text-indent: 0; font-weight: 600; opacity: 0.85; }
+.mlp-fn-back { margin-left: 0.25em; cursor: pointer; color: var(--vscode-textLink-foreground, #2f6feb); font-weight: 400; }
+.mlp-fn-flashbox { position: absolute; left: 0; right: 0; pointer-events: none; z-index: 3;
+	background: rgba(255, 196, 0, 0.30); border-radius: 4px; animation: mlp-fn-fade 1.5s ease-out forwards; }
+@keyframes mlp-fn-fade { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
+`);
+    console.log("patch dist/webview-editor.js + css (footnotes)");
+  }
+}
+
 if (rename) {
   const p = path.join(dir, "package.json");
   const j = JSON.parse(fs.readFileSync(p, "utf8"));

@@ -9,6 +9,7 @@ independent patch: it is affiliated with neither t-shoot nor Obsidian. This pack
 - **Wikilinks**: `[[note]]`, `[[note#Heading]]`, `[[note#^block|label]]` render as links and open the note in Live Preview at the anchor. Notes are found by name anywhere in the workspace, as in Obsidian.
 - **Callouts**: `> [!note]`, `> [!danger] Title` and the other Obsidian types render as coloured cards with an icon (styled by `styles/thai-readable.css`).
 - **Tables inside quotes and callouts** render as tables, including a table directly under a line of text, and a `|` inside `[[...]]` no longer splits a table cell.
+- **Footnotes**: `[^1]` renders as a superscript number with a hover card. Clicking it jumps to the definition, and `↩` jumps back. `[^1]: …` definitions render as a numbered list.
 - **A readable highlight**: the selection band becomes translucent instead of hiding the text.
 
 It is a patched copy of version 0.4.0 (MIT licence, notice kept). The patched copy

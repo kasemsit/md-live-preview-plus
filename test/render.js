@@ -13,13 +13,15 @@ const {chromium}=require(process.env.PLAYWRIGHT||"playwright-core");
  await p.waitForTimeout(1500);
  if(process.env.DARK)await p.evaluate(()=>{document.body.classList.add("vscode-dark")});
  if(process.env.SHOT)await p.screenshot({path:process.env.SHOT,fullPage:true});
- const r=await p.evaluate(()=>{
+ const r=await p.evaluate((D)=>{
    const out={};
    out.tables=[...document.querySelectorAll("table")].map(t=>t.outerHTML);
    out.tableWraps=[...document.querySelectorAll("table")].map(t=>{let top=t;while(top.parentElement&&!top.parentElement.classList.contains("cm-content"))top=top.parentElement;return{top:top.tagName+"."+top.className,prev:top.previousElementSibling&&top.previousElementSibling.className}});
+   if(D)out.dump=[...document.querySelectorAll(".cm-line")].filter(l=>l.textContent.includes(D)).slice(0,3).map(l=>l.innerHTML.slice(0,1500));
+   out.fn={refs:document.querySelectorAll(".mlp-fn-ref").length,firstRef:(document.querySelector(".mlp-fn")||{}).outerHTML?.slice(0,400),defs:document.querySelectorAll(".cm-line.mlp-fn-def").length,firstDef:(document.querySelector(".cm-line.mlp-fn-def")||{}).textContent?.slice(0,120)};
    out.wikilinks=[...document.querySelectorAll(".mlp-wikilink")].map(a=>a.outerHTML);
    out.lines=[...document.querySelectorAll(".cm-line")].map(l=>l.className+" | "+l.textContent.slice(0,80));
-   return out});
+   return out},process.env.DUMP||"");
  console.log(JSON.stringify(r,null,1));
  await b.close();
 })();
