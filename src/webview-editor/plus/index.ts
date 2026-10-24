@@ -6,6 +6,7 @@ import { calloutPlugin } from './callouts';
 import { footnotePlugin, insertFootnote } from './footnotes';
 import { blockIdPlugin } from './blockIds';
 import { commentPlugin } from './comments';
+import { citationPlugin } from './citations';
 import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
@@ -24,6 +25,7 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 		footnotePlugin,
 		blockIdPlugin,
 		commentPlugin,
+		citationPlugin,
 		selectionReporter(post),
 		plusCompletion,
 	];

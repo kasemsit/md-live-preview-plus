@@ -39,7 +39,7 @@ export function takePendingJump(uri: vscode.Uri): number | undefined {
 	return line;
 }
 
-const EXCLUDE = '**/{node_modules,.git,.obsidian,.trash}/**';
+export const EXCLUDE = '**/{node_modules,.git,.obsidian,.trash}/**';
 
 /** Glob-escapes a literal path segment (`[`, `]`, `{`, `}`, `?`, `*`, `!`). */
 function globEscape(s: string): string {
@@ -74,6 +74,28 @@ async function readLines(uri: vscode.Uri): Promise<string[]> {
 	return text.split(/\r?\n/);
 }
 
+/**
+ * Opens a note in Live Preview and moves to `line` (1-based; 0 = no jump) once
+ * its editor has the text — or at once, when that editor is already open.
+ */
+export async function openAtLine(uri: vscode.Uri, line: number): Promise<void> {
+	const key = uri.toString();
+	if (line) pendingJumps.set(key, line);
+	await vscode.commands.executeCommand('vscode.openWith', uri, 'mdLivePreview.editor');
+	if (!line) return;
+	// Already open: no `ready` will come, so jump in the existing editor.
+	setTimeout(() => {
+		if (!pendingJumps.has(key)) return;
+		for (const s of [...sessions].reverse()) {
+			if (s.getDocument().uri.toString() === key) {
+				pendingJumps.delete(key);
+				s.jumpToLine(line);
+				return;
+			}
+		}
+	}, 500);
+}
+
 export async function openWikilink(session: PlusSession, link: string): Promise<void> {
 	const parts = link.split('#');
 	const name = parts[0].trim();
@@ -99,21 +121,7 @@ export async function openWikilink(session: PlusSession, link: string): Promise<
 			if (line) session.jumpToLine(line);
 			return;
 		}
-		const key = uri.toString();
-		if (line) pendingJumps.set(key, line);
-		await vscode.commands.executeCommand('vscode.openWith', uri, 'mdLivePreview.editor');
-		if (!line) return;
-		// Already open: no `ready` will come, so jump in the existing editor.
-		setTimeout(() => {
-			if (!pendingJumps.has(key)) return;
-			for (const s of [...sessions].reverse()) {
-				if (s.getDocument().uri.toString() === key) {
-					pendingJumps.delete(key);
-					s.jumpToLine(line);
-					return;
-				}
-			}
-		}, 500);
+		await openAtLine(uri, line);
 	} catch (err) {
 		void vscode.window.showWarningMessage(`Wikilink: ${err instanceof Error ? err.message : String(err)}`);
 	}

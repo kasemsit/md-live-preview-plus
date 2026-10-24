@@ -68,3 +68,42 @@ export function splitTarget(target: string): { name: string; anchor: string } {
 	const parts = target.split('#');
 	return { name: parts[0].trim(), anchor: parts.length > 1 ? parts[parts.length - 1].trim() : '' };
 }
+
+/**
+ * A Pandoc citation key inside a bracketed group — `[@key]`, `[@a; @b]`,
+ * `[see @key, p. 33]`, `[-@key]`. Only bracketed citations are matched: a bare
+ * `@word` in prose is far more often an e-mail address or a handle.
+ */
+export interface CitationMatch {
+	/** Offset of `@`. */
+	from: number;
+	/** Offset just past the key. */
+	to: number;
+	key: string;
+	/** The enclosing `[...]`. */
+	groupFrom: number;
+	groupTo: number;
+}
+
+// Not the inside of `[[...]]`, and not a `[text](url)` or `[text][ref]` link.
+const CITE_GROUP = /(?<!\[)\[([^[\]\n]*@[^[\]\n]*)\](?![\](])/g;
+const CITE_KEY = /(^|[\s;])(-?)@([A-Za-z0-9_](?:[\w:.#$%&+?<>~/-]*[A-Za-z0-9_])?)/g;
+
+export function findCitations(text: string): CitationMatch[] {
+	if (!text.includes('@')) return [];
+	const out: CitationMatch[] = [];
+	for (const group of text.matchAll(CITE_GROUP)) {
+		const groupFrom = group.index!;
+		const groupTo = groupFrom + group[0].length;
+		for (const k of group[1].matchAll(CITE_KEY)) {
+			const at = groupFrom + 1 + k.index! + k[1].length + k[2].length;
+			out.push({ from: at, to: at + 1 + k[3].length, key: k[3], groupFrom, groupTo });
+		}
+	}
+	return out;
+}
+
+/** True when a citation group starts at `offset` of `text` (the `[` of `[@key]`). */
+export function isCitationAt(text: string, offset: number): boolean {
+	return findCitations(text).some((c) => c.groupFrom === offset);
+}

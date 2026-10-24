@@ -80,6 +80,11 @@ export class MarkdownLivePreviewProvider implements vscode.CustomTextEditorProvi
 		return session ? extractHeadings(session.getDocument().getText()) : undefined;
 	}
 
+	/** md-live-preview-plus: the document of the active Live Preview panel, if any. */
+	getActiveDocumentUri(): vscode.Uri | undefined {
+		return this.findActiveSession()?.getDocument().uri;
+	}
+
 	/** md-live-preview-plus: inserts a footnote in the active Live Preview panel, if any. */
 	insertFootnoteInActive(): void {
 		this.findActiveSession()?.insertFootnote();

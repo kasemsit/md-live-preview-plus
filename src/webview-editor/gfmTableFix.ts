@@ -1,6 +1,6 @@
 import { TaskList, Strikethrough, Autolink, type BlockContext, type Line, type LeafBlock, type MarkdownExtension } from '@lezer/markdown';
 import { PlusTable } from './plus/table';
-import { insideWikilink } from './plus/wikilinkSyntax';
+import { insideWikilink } from '../shared/plusWikilinks';
 
 const delimiterLine = /^\|?(\s*:?-+:?\s*\|)+(\s*:?-+:?\s*)?$/;
 

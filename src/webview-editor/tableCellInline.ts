@@ -1,6 +1,7 @@
 import { parser as baseMarkdownParser, Table, TaskList, Strikethrough, Autolink } from '@lezer/markdown';
 import type { SyntaxNode, Tree } from '@lezer/common';
 import { withInlinePasses } from './plus/inlineExtras';
+import { isCitationAt } from '../shared/plusWikilinks';
 
 // A table cell's content is plain text as far as CodeMirror is concerned — the
 // rich TableWidget builds its own DOM outside the editor, so the live-preview
@@ -118,8 +119,9 @@ function renderNode(parent: HTMLElement, node: SyntaxNode, src: string, hooks: C
 			return;
 		}
 		case 'Link': {
-			// plus: "[^1]" is a footnote reference; plus/footnotes.ts renders it.
-			if (src.slice(node.from, node.from + 2) === '[^') {
+			// plus: "[^1]" is a footnote reference (plus/footnotes.ts) and "[@key]"
+			// a citation (plus/citations.ts); both are rendered from the text.
+			if (src.slice(node.from, node.from + 2) === '[^' || isCitationAt(src, node.from)) {
 				appendText(parent, src.slice(node.from, node.to));
 				return;
 			}

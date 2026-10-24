@@ -1,6 +1,6 @@
 import type { PlusNote } from '../../shared/messages';
 import { listNotes } from './hostRequests';
-import { splitTarget } from './wikilinkSyntax';
+import { splitTarget } from '../../shared/plusWikilinks';
 
 /**
  * Which notes exist, so a wikilink to a missing one can be shown as such (as

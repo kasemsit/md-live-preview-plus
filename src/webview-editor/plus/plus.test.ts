@@ -5,7 +5,8 @@ import { ensureSyntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import { GFM } from '../gfmTableFix';
 import { alignedBlockRange, readCellSpans } from '../livePreviewPlugin';
-import { findWikilinks, insideWikilink, splitTarget } from './wikilinkSyntax';
+import { findCitations, findWikilinks, insideWikilink, splitTarget } from '../../shared/plusWikilinks';
+import { cleanLine, extractLinks, keysForNote } from '../../shared/plusBacklinks';
 import { quotePrefixLength } from './table';
 import { scanFootnotes, nextFootnoteLabel } from './footnotes';
 import { CALLOUT_HEAD, calloutStyle } from './callouts';
@@ -252,5 +253,58 @@ describe('hover preview extraction', () => {
 		const p = extractPreview(long, 'H');
 		expect(p.truncated).toBe(true);
 		expect(p.text.split('\n').length).toBe(40);
+	});
+});
+
+describe('citations', () => {
+	it('finds keys in bracketed groups', () => {
+		const text = 'As shown [@smith2020; see -@lee2019, p. 3] and [@a].';
+		expect(findCitations(text).map((c) => c.key)).toEqual(['smith2020', 'lee2019', 'a']);
+		const [first] = findCitations(text);
+		expect(text.slice(first.from, first.to)).toBe('@smith2020');
+		expect(text.slice(first.groupFrom, first.groupTo)).toBe('[@smith2020; see -@lee2019, p. 3]');
+	});
+
+	it('ignores e-mail addresses, wikilinks to reference notes, and links', () => {
+		expect(findCitations('[mail a@b.com]')).toEqual([]);
+		expect(findCitations('[[References/@smith2020|Smith 2020]]')).toEqual([]);
+		expect(findCitations('[[@smith2020]]')).toEqual([]);
+		expect(findCitations('[@x](https://x.org)')).toEqual([]);
+	});
+
+	it('does not take trailing punctuation into the key', () => {
+		expect(findCitations('[@key.]')[0].key).toBe('key');
+	});
+});
+
+describe('backlink index text', () => {
+	const note = [
+		'---',
+		'related: "[[Ignored in frontmatter]]"',
+		'---',
+		'- See [[Laws/TH - PDPA#^ma-32|ม.32]] and [[Other]].',
+		'> Cited [@smith2020].',
+		'```',
+		'[[In code]]',
+		'```',
+		'Same-note [[#Heading]] link.',
+	].join('\n');
+
+	it('extracts wikilinks and citations with lines, skipping frontmatter, code and same-note links', () => {
+		expect(extractLinks(note).map((l) => [l.key, l.line, l.label])).toEqual([
+			['laws/th - pdpa', 4, 'ม.32'],
+			['other', 4, 'Other'],
+			['@smith2020', 5, '@smith2020'],
+		]);
+	});
+
+	it('cleans a line for display', () => {
+		expect(cleanLine('- See [[Laws/TH - PDPA#^ma-32|ม.32]] here ^blk-1')).toBe('See ม.32 here');
+		expect(cleanLine('> > quoted [[x]]')).toBe('quoted x');
+	});
+
+	it('indexes a note under its name and every trailing part of its path', () => {
+		expect(keysForNote('Laws/TH - PDPA.md')).toEqual(['laws/th - pdpa', 'th - pdpa']);
+		expect(keysForNote('References/@smith2020.md')).toEqual(['references/@smith2020', '@smith2020']);
 	});
 });

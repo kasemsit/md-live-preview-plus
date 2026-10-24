@@ -3,7 +3,7 @@ import { StateEffect, type EditorState, type Extension, type Range } from '@code
 import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import { cursorTouchesRange, isBlockRevealed, blockRevealChanged } from '../cmUtils';
-import { findWikilinks } from './wikilinkSyntax';
+import { findWikilinks } from '../../shared/plusWikilinks';
 import { registerInlinePass } from './inlineExtras';
 import { isUnresolved, onNoteIndexChange, refreshNoteIndex } from './noteIndex';
 
@@ -32,9 +32,9 @@ export function inSourceContext(state: EditorState, pos: number): boolean {
 const hidden = Decoration.replace({});
 
 /** The note list arrived or changed: unresolved-link styling has to be recomputed. */
-const noteIndexChanged = StateEffect.define<null>();
+export const noteIndexChanged = StateEffect.define<null>();
 
-function linkClass(target: string): string {
+export function linkClass(target: string): string {
 	return isUnresolved(target) ? 'mlp-link mlp-wikilink mlp-wikilink-unresolved' : 'mlp-link mlp-wikilink';
 }
 

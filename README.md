@@ -14,6 +14,8 @@ This fork adds:
   - Links work in table cells, with `\|` or a bare `|` before the label.
   - **Hover** over a link to read its target in a card: a heading's section, or a block. The title of the card opens the note.
   - A link to a note that does not exist is shown faint.
+- **Backlinks**: a sidebar view lists the notes that link to the one you are reading, each with the line that does it. A draft citing `[@key]` counts as a link to `@key.md`.
+- **Pandoc citations** `[@key]`: each key links to its `@key` reference note, with hover and click as for wikilinks. A key with no note is drawn faint.
 - **Completion**:
   - `[[` offers the notes in the workspace.
   - `[[note#` offers that note's headings, and `[[note#^` its block ids.
@@ -28,6 +30,7 @@ This fork adds:
 - **HTML comments** (`<!-- … -->`) are tinted as notes to the writer.
 - **Claude Code sees your selection**: the exact Markdown source, its line numbers and the file path. A webview's selection is otherwise invisible to VS Code and to Claude.
   - The file is saved when you select, so the line numbers match the file on disk.
+  - Text selected inside a rendered table is sent as the cells' Markdown source.
   - A status bar item shows what Claude will get with your next prompt. Click it to stop sending.
   - A notice in Claude Code says what was sent.
 - **A readable selection highlight**: the selection band no longer hides the text.

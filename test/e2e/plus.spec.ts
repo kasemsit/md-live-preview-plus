@@ -308,3 +308,79 @@ test('HTML comments are tinted, on their own lines or inline', async ({ page }) 
 	await expect(page.locator('.mlp-comment')).toHaveText('<!-- inline -->');
 	await expect(page.locator('.mlp-comment-marker')).toHaveCount(4);
 });
+
+test.describe('citations', () => {
+	const DOC = '# T\n\nAs shown [@smith2020; @lee2019] and [@typo].\n\n| claim | source |\n|---|---|\n| x | [@smith2020] |\n\nEnd.\n';
+
+	test('each key links to its reference note; a missing one is marked', async ({ page }) => {
+		await mountEditor(page, DOC);
+		const keys = page.locator('.cm-line .mlp-cite');
+		await expect(keys).toHaveText(['@smith2020', '@lee2019', '@typo']);
+		await expect(page.locator('.cm-line .mlp-cite-group')).toHaveCount(2);
+		await expect(page.locator('.cm-content')).toContainText('[@smith2020; @lee2019]');
+		const req = (await posted(page)).filter((m) => m.type === 'plusListNotes').at(-1)!;
+		await postToWebview(page, {
+			type: 'plusNotes',
+			requestId: req.requestId,
+			notes: [
+				{ name: '@smith2020', path: 'References/@smith2020.md' },
+				{ name: '@lee2019', path: 'References/@lee2019.md' },
+			],
+		});
+		await expect(page.locator('.mlp-cite.mlp-wikilink-unresolved')).toHaveText(['@typo']);
+		await keys.first().click();
+		expect((await posted(page)).filter((m) => m.type === 'openLink').at(-1)?.href).toBe('wiki:@smith2020');
+	});
+
+	test('render inside table cells and hover-preview like wikilinks', async ({ page }) => {
+		await mountEditor(page, DOC);
+		const cell = page.locator('.mlp-table-wrap .mlp-cite');
+		await expect(cell).toHaveText('@smith2020');
+		await cell.hover();
+		await expect.poll(async () => (await posted(page)).some((m) => m.type === 'plusPreview')).toBe(true);
+		expect((await posted(page)).filter((m) => m.type === 'plusPreview').at(-1)?.target).toBe('@smith2020');
+	});
+});
+
+test('a selection made inside a rendered table reaches Claude as source', async ({ page }) => {
+	await mountEditor(page, '# T\n\n| col a | col b |\n|---|---|\n| alpha **beta** gamma | delta |\n\nEnd.\n');
+	// Select "beta" inside the first body cell, as a drag would.
+	await page.evaluate(() => {
+		const strong = document.querySelector('.mlp-table-wrap td strong')!;
+		const range = document.createRange();
+		range.selectNodeContents(strong);
+		const sel = document.getSelection()!;
+		sel.removeAllRanges();
+		sel.addRange(range);
+	});
+	await expect
+		.poll(async () => (await posted(page)).filter((m) => m.type === 'plusSelection').at(-1))
+		.toMatchObject({ text: 'beta', startLine: 5, endLine: 5 });
+	// Across two cells: both cells' source.
+	await page.evaluate(() => {
+		const cells = document.querySelectorAll('.mlp-table-wrap td');
+		const range = document.createRange();
+		range.setStart(cells[0].firstChild!, 0);
+		range.setEnd(cells[1].firstChild!, 2);
+		const sel = document.getSelection()!;
+		sel.removeAllRanges();
+		sel.addRange(range);
+	});
+	await expect
+		.poll(async () => (await posted(page)).filter((m) => m.type === 'plusSelection').at(-1)?.text)
+		.toBe('alpha **beta** gamma | delta');
+});
+
+test('a real mouse drag across rendered cells reaches Claude as source', async ({ page }) => {
+	await mountEditor(page, '# T\n\n| name | state |\n| --- | --- |\n| Alice | OK |\n\nAfter the table.\n');
+	await page.locator('.cm-line').filter({ hasText: 'After' }).click();
+	const a = (await page.locator('[data-mlp-row="1"][data-mlp-col="0"]').boundingBox())!;
+	const b = (await page.locator('[data-mlp-row="1"][data-mlp-col="1"]').boundingBox())!;
+	await page.mouse.move(a.x + 5, a.y + a.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(b.x + b.width - 5, b.y + b.height / 2, { steps: 5 });
+	await page.mouse.up();
+	await expect
+		.poll(async () => (await posted(page)).filter((m) => m.type === 'plusSelection').at(-1))
+		.toMatchObject({ text: 'Alice | OK', startLine: 5, endLine: 5 });
+});

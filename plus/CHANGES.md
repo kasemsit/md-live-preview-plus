@@ -2,6 +2,16 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
+## 0.4.5
+
+- **Backlinks view** in the Markdown Live Preview sidebar: the notes that link to the one you are reading, each with the line that does it. Click a line to open that note there.
+  - Pandoc citations count: a draft citing `[@key]` is listed under the reference note `@key.md`.
+  - Works for the active Live Preview or an ordinary Markdown editor, and follows saved changes on disk.
+- **Pandoc citations** (`[@key]`, `[@a; @b, p. 3]`) in drafts:
+  - each key links to its `@key` reference note: hover to read it, click to open it;
+  - a key with no note is drawn faint, so a typo shows before the document is built.
+- **Selections inside rendered tables now reach Claude**, as the cells' Markdown source with line numbers. Before, Claude received nothing for them.
+
 ## 0.4.4
 
 - **Hover preview of wikilinks**: rest the pointer on `[[note#^ma-32]]` to read that block in a card without leaving the note.

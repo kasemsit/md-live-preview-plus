@@ -4,7 +4,7 @@ import type { PlusPreview } from '../../shared/messages';
 import { renderInlineInto } from '../tableCellInline';
 import { cellInlineHooks } from '../livePreviewPlugin';
 import { previewLink } from './hostRequests';
-import { insideWikilink } from './wikilinkSyntax';
+import { insideWikilink } from '../../shared/plusWikilinks';
 import { calloutStyle } from './callouts';
 
 /**

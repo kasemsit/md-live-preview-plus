@@ -1,6 +1,6 @@
 import { tags } from '@lezer/highlight';
 import type { BlockContext, Element, LeafBlock, Line, MarkdownConfig } from '@lezer/markdown';
-import { insideWikilink } from './wikilinkSyntax';
+import { insideWikilink } from '../../shared/plusWikilinks';
 
 /*
  * GFM tables — a copy of @lezer/markdown's `Table` extension (MIT, Marijn

@@ -12,7 +12,7 @@ import { renderInlineInto, type CellInlineHooks } from './tableCellInline';
 import { createCodeModeButton, createCopyCodeButton, createRenderModeButton } from './codeModeButton';
 import { insertRow, insertColumn, renderTableMarkdown, type TableEditModel } from './tableEdit';
 import { t } from '../shared/i18n';
-import { insideWikilink } from './plus/wikilinkSyntax';
+import { insideWikilink, isCitationAt } from '../shared/plusWikilinks';
 
 const HEADING_LINE_CLASS: Record<string, string> = {
 	ATXHeading1: 'mlp-line-h1',
@@ -1676,11 +1676,13 @@ function buildDecorations(view: EditorView): DecorationSet {
 						return; // descend to hide the ``` fence marks
 					}
 					case 'Link': {
-						// plus: "[^1]" is a footnote reference, rendered by plus/footnotes.ts,
-						// and "[x]" inside "[[x]]" is part of a wikilink (plus/wikilinks.ts).
+						// plus: "[^1]" is a footnote reference (plus/footnotes.ts), "[x]"
+						// inside "[[x]]" is part of a wikilink (plus/wikilinks.ts), and
+						// "[@key]" is a citation (plus/citations.ts).
 						if (state.sliceDoc(node.from, node.from + 2) === '[^') return false;
 						const linkLine = doc.lineAt(node.from);
 						if (insideWikilink(linkLine.text)(node.from - linkLine.from)) return false;
+						if (isCitationAt(linkLine.text, node.from - linkLine.from)) return false;
 						const marks = node.node.getChildren('LinkMark');
 						if (marks.length < 2) return;
 						const labelFrom = marks[0].to;

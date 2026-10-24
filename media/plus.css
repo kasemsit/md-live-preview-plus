@@ -17,6 +17,14 @@
 	border-bottom-color: transparent !important;
 }
 
+/* ── Pandoc citations [@key]: a faint chip; each key links to its @key note ── */
+.mlp-cite-group {
+	background: color-mix(in srgb, var(--vscode-textLink-foreground, #2f6feb) 9%, transparent);
+	border-radius: 4px;
+	padding: 0 0.15em;
+}
+.mlp-cite { text-decoration: none; }
+
 /* ── Hover preview of a wikilink: the target heading/block in a card ── */
 .mlp-link-preview {
 	position: fixed; z-index: 1000;
