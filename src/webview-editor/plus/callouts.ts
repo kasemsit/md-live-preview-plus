@@ -1,6 +1,6 @@
 import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewUpdate, WidgetType } from '@codemirror/view';
-import type { Range } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
+import type { EditorState, Extension, Range } from '@codemirror/state';
+import { syntaxTree, codeFolding, foldEffect, unfoldEffect, foldedRanges } from '@codemirror/language';
 import { cursorTouchesRange, blockRevealChanged } from '../cmUtils';
 import { blockReplacedLines } from '../livePreviewPlugin';
 
@@ -12,6 +12,10 @@ import { blockReplacedLines } from '../livePreviewPlugin';
  * `-last`); on the title line `[!type]` becomes an icon, followed by the type
  * name when no title is given. The raw source shows while the caret is on the
  * title line. Colours and shapes live in media/plus.css.
+ *
+ * Folding follows Obsidian: `[!type]-` starts folded, `[!type]+` starts open,
+ * and either gets a chevron on its title that folds or opens it. The fold is
+ * CodeMirror's own (`codeFolding`), so a folded body is skipped by the caret.
  */
 
 // Simple 24x24 stroke icons (stroke = currentColor), drawn for this extension.
@@ -96,7 +100,67 @@ class CalloutIconWidget extends WidgetType {
 	}
 }
 
-function build(view: EditorView): DecorationSet {
+/** The body range a callout folds: from the end of its title line to the end of its last line. */
+interface FoldRange {
+	from: number;
+	to: number;
+}
+
+function isFolded(state: EditorState, range: FoldRange): boolean {
+	let folded = false;
+	foldedRanges(state).between(range.from, range.from, (from) => {
+		if (from === range.from) folded = true;
+	});
+	return folded;
+}
+
+function toggleFold(view: EditorView, range: FoldRange): void {
+	const { state } = view;
+	if (isFolded(state, range)) {
+		const effects: ReturnType<typeof unfoldEffect.of>[] = [];
+		foldedRanges(state).between(range.from, range.from, (from, to) => {
+			if (from === range.from) effects.push(unfoldEffect.of({ from, to }));
+		});
+		view.dispatch({ effects });
+		return;
+	}
+	// A caret inside the body would vanish into the fold; move it past the callout.
+	const sel = state.selection.main;
+	const inside = sel.head > range.from && sel.head <= range.to;
+	const after = Math.min(range.to + 1, state.doc.length);
+	view.dispatch({ effects: foldEffect.of(range), ...(inside ? { selection: { anchor: after } } : {}) });
+}
+
+class FoldToggleWidget extends WidgetType {
+	constructor(
+		private readonly range: FoldRange,
+		private readonly folded: boolean,
+	) {
+		super();
+	}
+	eq(other: FoldToggleWidget): boolean {
+		return other.range.from === this.range.from && other.range.to === this.range.to && other.folded === this.folded;
+	}
+	toDOM(view: EditorView): HTMLElement {
+		const button = document.createElement('span');
+		button.className = this.folded ? 'mlp-callout-fold mlp-callout-fold-closed' : 'mlp-callout-fold';
+		button.title = this.folded ? 'Open' : 'Fold';
+		button.innerHTML =
+			'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+		button.addEventListener('mousedown', (event) => {
+			if (event.button !== 0) return;
+			event.preventDefault();
+			event.stopPropagation();
+			toggleFold(view, this.range);
+		});
+		return button;
+	}
+	ignoreEvent(): boolean {
+		return true;
+	}
+}
+
+function build(view: EditorView, startFolded: FoldRange[]): DecorationSet {
 	const { state } = view;
 	const { doc } = state;
 	const out: Range<Decoration>[] = [];
@@ -114,15 +178,20 @@ function build(view: EditorView): DecorationSet {
 				if (!m) return false;
 				const { colour } = calloutStyle(m[2]);
 				const last = doc.lineAt(node.to).number;
+				const fold: FoldRange | null = m[3] && last > head.number ? { from: head.to, to: doc.line(last).to } : null;
+				const folded = fold ? isFolded(state, fold) : false;
+				if (fold && m[3] === '-') startFolded.push(fold);
 				const replaced = blockReplacedLines(state, node.node);
-				for (let n = head.number; n <= last; n++) {
+				for (let n = head.number; n <= (folded ? head.number : last); n++) {
 					if (replaced.has(n)) continue;
 					let cls = `mlp-callout mlp-co-${colour}`;
 					if (n === head.number) cls += ' mlp-callout-first';
-					if (n === last) cls += ' mlp-callout-last';
+					if (n === last || folded) cls += ' mlp-callout-last';
+					if (folded) cls += ' mlp-callout-folded';
 					out.push(Decoration.line({ class: cls }).range(doc.line(n).from));
 				}
 				if (!cursorTouchesRange(state, head.from, head.to)) {
+					if (fold) out.push(Decoration.widget({ widget: new FoldToggleWidget(fold, folded), side: -1 }).range(head.to));
 					const markFrom = head.from + m[1].length;
 					const markTo = markFrom + m[2].length + 3 + m[3].length;
 					const rest = head.text.slice(markTo - head.from);
@@ -138,22 +207,51 @@ function build(view: EditorView): DecorationSet {
 	return Decoration.set(out, true);
 }
 
-export const calloutPlugin = ViewPlugin.fromClass(
+const calloutDecorations = ViewPlugin.fromClass(
 	class {
 		decorations: DecorationSet;
-		constructor(view: EditorView) {
-			this.decorations = build(view);
+		// Title-line ends of `[!type]-` callouts already folded once, so one the
+		// user opened is not folded again on the next rebuild.
+		private initiallyFolded = new Set<number>();
+		constructor(private readonly view: EditorView) {
+			this.decorations = this.rebuild();
 		}
 		update(update: ViewUpdate) {
+			if (update.docChanged) {
+				this.initiallyFolded = new Set([...this.initiallyFolded].map((p) => update.changes.mapPos(p)));
+			}
 			if (
 				update.docChanged ||
 				update.viewportChanged ||
 				update.selectionSet ||
-				update.transactions.some((tr) => tr.effects.some((e) => e.is(blockRevealChanged)))
+				update.transactions.some((tr) =>
+					tr.effects.some((e) => e.is(blockRevealChanged) || e.is(foldEffect) || e.is(unfoldEffect)),
+				)
 			) {
-				this.decorations = build(update.view);
+				this.decorations = this.rebuild();
 			}
+		}
+		private rebuild(): DecorationSet {
+			const startFolded: FoldRange[] = [];
+			const decorations = build(this.view, startFolded);
+			const fresh = startFolded.filter((r) => !this.initiallyFolded.has(r.from));
+			if (fresh.length) {
+				for (const r of fresh) this.initiallyFolded.add(r.from);
+				// Not allowed while the view is updating; run right after.
+				queueMicrotask(() => this.view.dispatch({ effects: fresh.map((r) => foldEffect.of(r)) }));
+			}
+			return decorations;
 		}
 	},
 	{ decorations: (v) => v.decorations },
 );
+
+const foldPlaceholder = codeFolding({
+	placeholderDOM: () => {
+		const span = document.createElement('span');
+		span.className = 'mlp-callout-fold-placeholder';
+		return span;
+	},
+});
+
+export const calloutPlugin: Extension = [foldPlaceholder, calloutDecorations];

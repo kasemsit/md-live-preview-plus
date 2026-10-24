@@ -5,6 +5,8 @@ import { wikilinkExtension } from './wikilinks';
 import { calloutPlugin } from './callouts';
 import { footnotePlugin, insertFootnote } from './footnotes';
 import { blockIdPlugin } from './blockIds';
+import { commentPlugin } from './comments';
+import { linkPreviewExtension } from './linkPreview';
 import { selectionReporter } from './selection';
 import { plusCompletion } from './completion';
 import { handlePlusReply, setPlusPoster } from './hostRequests';
@@ -17,9 +19,11 @@ export function plusExtensions(post: (message: EditorToHostMessage) => void): Ex
 	setPlusPoster(post);
 	return [
 		wikilinkExtension((href) => post({ type: 'openLink', href })),
+		linkPreviewExtension((href) => post({ type: 'openLink', href })),
 		calloutPlugin,
 		footnotePlugin,
 		blockIdPlugin,
+		commentPlugin,
 		selectionReporter(post),
 		plusCompletion,
 	];

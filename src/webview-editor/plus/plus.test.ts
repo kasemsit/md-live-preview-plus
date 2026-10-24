@@ -10,7 +10,7 @@ import { quotePrefixLength } from './table';
 import { scanFootnotes, nextFootnoteLabel } from './footnotes';
 import { CALLOUT_HEAD, calloutStyle } from './callouts';
 import { linkTexts } from './completion';
-import { anchorsInText, findAnchorLine } from '../../shared/plusAnchors';
+import { anchorsInText, extractPreview, findAnchorLine } from '../../shared/plusAnchors';
 import { isNewer, parseReleaseTag } from '../../shared/plusVersion';
 import { linkFileName, rankMatches } from '../../shared/plusLinks';
 
@@ -184,5 +184,73 @@ describe('update check versions', () => {
 		expect(isNewer([0, 5, 0], [0, 4, 9])).toBe(true);
 		expect(isNewer([0, 4, 2], [0, 4, 2])).toBe(false);
 		expect(isNewer([0, 4, 1], [0, 4, 2])).toBe(false);
+	});
+});
+
+describe('hover preview extraction', () => {
+	const law = [
+		'---',
+		'title: x',
+		'---',
+		'',
+		'# TH - PDPA',
+		'',
+		'### มาตรา 31 — สิทธิให้โอนย้าย ^ma-31',
+		'',
+		'> มาตรา ๓๑ ...',
+		'',
+		'### มาตรา 32 — สิทธิคัดค้าน ^ma-32',
+		'',
+		'> มาตรา ๓๒ บรรทัดหนึ่ง',
+		'> (๑) บรรทัดสอง',
+		'',
+		'## หมวด 4',
+		'',
+		'First line of a paragraph',
+		'second line ^para-1',
+		'',
+		'| a | b |',
+		'| 1 | 2 |',
+		'^table-1',
+		'',
+		'- item one',
+		'- item two ^li-2',
+	];
+
+	it('a block id on a heading previews the heading section, ids removed', () => {
+		const p = extractPreview(law, '^ma-32');
+		expect(p.text).toBe('### มาตรา 32 — สิทธิคัดค้าน\n\n> มาตรา ๓๒ บรรทัดหนึ่ง\n> (๑) บรรทัดสอง');
+		expect(p.anchorFound).toBe(true);
+	});
+
+	it('a heading anchor previews its section up to the next heading of the same level', () => {
+		expect(extractPreview(law, 'หมวด 4').text.split('\n')[0]).toBe('## หมวด 4');
+		expect(extractPreview(law, 'หมวด 4').text).toContain('- item two');
+	});
+
+	it('a paragraph id previews the whole paragraph', () => {
+		expect(extractPreview(law, '^para-1').text).toBe('First line of a paragraph\nsecond line');
+	});
+
+	it('an id on its own line previews the block above it', () => {
+		expect(extractPreview(law, '^table-1').text).toBe('| a | b |\n| 1 | 2 |');
+	});
+
+	it('a list item id previews that item', () => {
+		expect(extractPreview(law, '^li-2').text).toBe('- item two');
+	});
+
+	it('no anchor, or a missing one, previews the opening after the frontmatter', () => {
+		expect(extractPreview(law, '').text.split('\n')[0]).toBe('# TH - PDPA');
+		const missing = extractPreview(law, '^nope');
+		expect(missing.anchorFound).toBe(false);
+		expect(missing.text.split('\n')[0]).toBe('# TH - PDPA');
+	});
+
+	it('cuts long sections', () => {
+		const long = ['# H', ...Array.from({ length: 100 }, (_, i) => `line ${i}`)];
+		const p = extractPreview(long, 'H');
+		expect(p.truncated).toBe(true);
+		expect(p.text.split('\n').length).toBe(40);
 	});
 });

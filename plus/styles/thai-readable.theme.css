@@ -28,14 +28,18 @@ body {
 p { margin: 0; }
 .cm-line:has(> br:only-child) { line-height: 0.75; }
 
-/* ── Headings: weight and space carry the hierarchy; colour stays quiet ── */
+/* ── Headings: size and space carry the hierarchy; every level shares one hue
+   (the theme's link colour), deepest at the top and softening down the levels,
+   so no single level stands out as the only coloured one. ── */
 h1, h2, h3, h4, h5, h6 {
 	font-family: inherit;
 	font-weight: 700;
 	line-height: 1.35;
 	margin: 0.5em 0 0.15em;
 	letter-spacing: -0.005em;
+	color: color-mix(in srgb, var(--accent) 80%, var(--ink));
 }
+h1, h2 { color: color-mix(in srgb, var(--accent) 60%, var(--ink)); }
 h1 {
 	font-size: 1.95em;
 	margin-top: 0.2em;
@@ -47,9 +51,9 @@ h2 {
 	padding-bottom: 0.2em;
 	border-bottom: 1px solid var(--rule);
 }
-h3 { font-size: 1.2em; color: var(--accent); }
+h3 { font-size: 1.2em; }
 h4 { font-size: 1.05em; }
-h5, h6 { font-size: 1em; color: var(--soft); }
+h5, h6 { font-size: 1em; color: color-mix(in srgb, var(--accent) 45%, var(--soft)); }
 
 strong, b { font-weight: 700; }
 em, i { font-style: italic; }

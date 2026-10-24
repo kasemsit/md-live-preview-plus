@@ -66,8 +66,18 @@ export interface PlusAnchor {
 	level?: number;
 }
 
+/** What a wikilink's hover card shows. `text` is Markdown cut from the target note. */
+export interface PlusPreview {
+	title: string;
+	text: string;
+	/** `missing`: no such note; `anchor-missing`: the note exists, the heading/block does not. */
+	status: 'ok' | 'missing' | 'anchor-missing' | 'not-markdown';
+	truncated: boolean;
+}
+
 export type PlusHostToEditorMessage =
 	| { type: 'plusNotes'; requestId: number; notes: PlusNote[] }
+	| { type: 'plusPreviewResult'; requestId: number; preview: PlusPreview }
 	| { type: 'plusAnchors'; requestId: number; anchors: PlusAnchor[] }
 	| { type: 'plusInsertFootnote' };
 
@@ -78,7 +88,9 @@ export type PlusEditorToHostMessage =
 	| { type: 'plusSelection'; text: string; from?: number; to?: number; startLine?: number; endLine?: number }
 	| { type: 'plusListNotes'; requestId: number }
 	// `target` is the wikilink target before `#`; empty means the current document.
-	| { type: 'plusListAnchors'; requestId: number; target: string };
+	| { type: 'plusListAnchors'; requestId: number; target: string }
+	// `target` is everything after `wiki:` — `note#anchor`.
+	| { type: 'plusPreview'; requestId: number; target: string };
 
 export interface StyleEntry {
 	id: string;

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
-import type { PlusAnchor, PlusNote } from '../../shared/messages';
-import { anchorsInText, findAnchorLine } from '../../shared/plusAnchors';
+import type { PlusAnchor, PlusNote, PlusPreview } from '../../shared/messages';
+import { anchorsInText, extractPreview, findAnchorLine } from '../../shared/plusAnchors';
 import { linkFileName, rankMatches } from '../../shared/plusLinks';
 
 /**
@@ -23,6 +23,12 @@ const pendingJumps = new Map<string, number>();
 export function trackSession(session: PlusSession): vscode.Disposable {
 	sessions.add(session);
 	return new vscode.Disposable(() => sessions.delete(session));
+}
+
+/** Whether any open Live Preview shows `uri`. */
+export function hasSessionFor(uri: vscode.Uri): boolean {
+	const key = uri.toString();
+	return [...sessions].some((s) => s.getDocument().uri.toString() === key);
 }
 
 /** Called after `init` is sent: the line a wikilink asked this document to open at, if any. */
@@ -133,5 +139,24 @@ export async function listAnchors(session: PlusSession, target: string): Promise
 		return anchorsInText((await readLines(uri)).join('\n'));
 	} catch {
 		return [];
+	}
+}
+
+/** The hover card for `[[note#anchor]]`: the heading's section, the block, or the note's opening. */
+export async function previewWikilink(session: PlusSession, target: string): Promise<PlusPreview> {
+	const parts = target.split('#');
+	const name = parts[0].trim();
+	const anchor = parts.length > 1 ? parts[parts.length - 1].trim() : '';
+	const title = (name ? path.basename(name).replace(/\.(md|markdown)$/i, '') : path.basename(session.getDocument().uri.fsPath).replace(/\.(md|markdown)$/i, '')) + (anchor ? ` › ${anchor}` : '');
+	try {
+		const uri = await resolveWikiTarget(session.getDocument().uri, name);
+		if (!uri) return { title, text: '', status: 'missing', truncated: false };
+		if (!/\.(md|markdown)$/i.test(uri.fsPath)) {
+			return { title, text: vscode.workspace.asRelativePath(uri, false), status: 'not-markdown', truncated: false };
+		}
+		const { text, anchorFound, truncated } = extractPreview(await readLines(uri), anchor);
+		return { title, text, status: anchorFound ? 'ok' : 'anchor-missing', truncated };
+	} catch {
+		return { title, text: '', status: 'missing', truncated: false };
 	}
 }

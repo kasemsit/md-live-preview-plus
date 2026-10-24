@@ -5,6 +5,7 @@ import { StyleStore } from './sidebar/styleStore';
 import { OutlineViewProvider } from './sidebar/OutlineViewProvider';
 import { setGrammarRoot } from './editor/shikiHost';
 import { checkForUpdate } from './editor/plus/updateCheck';
+import { initSelectionStatus } from './editor/plus/selectionFile';
 
 function getActiveMarkdownUri(): vscode.Uri | undefined {
 	if (vscode.window.activeTextEditor?.document.languageId === 'markdown') {
@@ -187,6 +188,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// md-live-preview-plus: not on the Marketplace, so it checks GitHub Releases itself.
 	void checkForUpdate(context);
+	// md-live-preview-plus: status bar item showing what Claude gets from the preview.
+	initSelectionStatus(context);
 
 	context.subscriptions.push(
 		vscode.workspace.onDidCloseTextDocument((doc) => {

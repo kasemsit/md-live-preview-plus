@@ -9,6 +9,79 @@
 
 /* ── Wikilinks ── */
 .mlp-wikilink { cursor: pointer; }
+/* A link to a note that does not exist (Obsidian shows these fainter). */
+.mlp-wikilink.mlp-wikilink-unresolved {
+	opacity: 0.6;
+	text-decoration: underline dashed;
+	text-underline-offset: 0.2em;
+	border-bottom-color: transparent !important;
+}
+
+/* ── Hover preview of a wikilink: the target heading/block in a card ── */
+.mlp-link-preview {
+	position: fixed; z-index: 1000;
+	width: min(38em, calc(100vw - 16px));
+	max-height: min(26em, 60vh);
+	display: flex; flex-direction: column;
+	font-size: 0.9em; line-height: 1.6;
+	color: var(--vscode-editorHoverWidget-foreground, var(--vscode-editor-foreground, #24292f));
+	background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background, #ffffff));
+	border: 1px solid var(--vscode-editorHoverWidget-border, rgba(128,128,128,0.35));
+	border-radius: 8px;
+	box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+	overflow: hidden;
+}
+.mlp-lp-title {
+	padding: 0.45em 0.9em; font-weight: 700; cursor: pointer;
+	color: var(--vscode-textLink-foreground, #2f6feb);
+	border-bottom: 1px solid var(--vscode-editorHoverWidget-border, rgba(128,128,128,0.25));
+	white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none;
+}
+.mlp-lp-title:hover { text-decoration: underline; }
+.mlp-lp-status { padding: 0.4em 0.9em 0; font-size: 0.92em; opacity: 0.75; font-style: italic; flex: none; }
+.mlp-lp-missing .mlp-lp-status { padding-bottom: 0.5em; }
+.mlp-lp-body { padding: 0.5em 0.9em 0.7em; overflow-y: auto; }
+.mlp-lp-body > :first-child { margin-top: 0; }
+.mlp-lp-p { margin: 0.35em 0; }
+.mlp-lp-h { font-weight: 700; margin: 0.6em 0 0.2em; color: color-mix(in srgb, var(--vscode-textLink-foreground, #2f6feb) 70%, currentColor); }
+.mlp-lp-h1 { font-size: 1.25em; } .mlp-lp-h2 { font-size: 1.15em; } .mlp-lp-h3 { font-size: 1.07em; }
+.mlp-lp-li { position: relative; margin: 0.15em 0; }
+.mlp-lp-li-mark { position: absolute; margin-left: -1.1em; opacity: 0.6; }
+.mlp-lp-quote {
+	margin: 0.4em 0; padding: 0.2em 0.8em;
+	border-left: 3px solid var(--vscode-textBlockQuote-border, rgba(127,127,127,0.5));
+	background: var(--vscode-textBlockQuote-background, rgba(127,127,127,0.05));
+}
+.mlp-lp-callout { --co: 59, 130, 246; border-left-color: rgb(var(--co)); background: rgba(var(--co), 0.08); border-radius: 0 6px 6px 0; }
+.mlp-lp-callout.mlp-co-cyan { --co: 8, 145, 178; } .mlp-lp-callout.mlp-co-green { --co: 22, 163, 74; }
+.mlp-lp-callout.mlp-co-yellow { --co: 202, 138, 4; } .mlp-lp-callout.mlp-co-orange { --co: 234, 88, 12; }
+.mlp-lp-callout.mlp-co-red { --co: 220, 38, 38; } .mlp-lp-callout.mlp-co-purple { --co: 147, 51, 234; }
+.mlp-lp-callout.mlp-co-gray { --co: 120, 120, 120; }
+.mlp-lp-callout-title { font-weight: 700; color: rgb(var(--co)); }
+.mlp-lp-table { border-collapse: collapse; margin: 0.4em 0; font-size: 0.95em; }
+.mlp-lp-table th, .mlp-lp-table td { border: 1px solid rgba(128,128,128,0.35); padding: 0.15em 0.5em; vertical-align: top; }
+.mlp-lp-table th { background: rgba(128,128,128,0.10); }
+.mlp-lp-code { margin: 0.4em 0; padding: 0.5em 0.7em; border-radius: 4px; overflow-x: auto; font-size: 0.9em;
+	background: var(--vscode-textCodeBlock-background, rgba(127,127,127,0.1)); }
+.mlp-lp-more { opacity: 0.6; }
+
+/* ── HTML comments (<!-- … -->): notes to the writer, shown as a sticky-note
+   band (own lines) or an in-line tint, so they never read as body text. ── */
+.cm-line.mlp-comment-line {
+	background: rgba(234, 179, 8, 0.12);
+	border-left: 3px solid rgba(202, 138, 4, 0.75);
+	padding-left: 0.9em !important;
+	color: color-mix(in srgb, currentColor 72%, rgb(161, 98, 7));
+	font-size: 0.93em;
+}
+.cm-line.mlp-comment-line-first { border-top-right-radius: 6px; padding-top: 0.25em !important; }
+.cm-line.mlp-comment-line-last { border-bottom-right-radius: 6px; padding-bottom: 0.25em !important; }
+.mlp-comment {
+	background: rgba(234, 179, 8, 0.14);
+	border-radius: 3px;
+	color: color-mix(in srgb, currentColor 72%, rgb(161, 98, 7));
+}
+.mlp-comment-marker { opacity: 0.45; }
 
 /* ── Block ids (… ^ma-32): a link target, not prose ── */
 .mlp-block-id { opacity: 0.4; font-size: 0.85em; }
@@ -54,6 +127,18 @@
 	font-weight: 700;
 	color: rgb(var(--co));
 }
+
+/* Foldable callouts ([!type]- / [!type]+): the chevron after the title. */
+.mlp-callout-fold {
+	display: inline-flex; vertical-align: -0.15em; margin-left: 0.35em;
+	color: rgb(var(--co)); opacity: 0.75; cursor: pointer;
+	transition: transform 0.15s ease;
+}
+.mlp-callout-fold:hover { opacity: 1; }
+.mlp-callout-fold svg { width: 1em; height: 1em; }
+.mlp-callout-fold.mlp-callout-fold-closed { transform: rotate(-90deg); }
+.mlp-callout-fold-placeholder { display: none; }
+.cm-line.mlp-callout-folded { padding-bottom: 0.55em !important; }
 
 /* A table inside a quote or callout. CodeMirror draws the table as a block
    placed between the quote's lines, so the frame continues the quote around it:

@@ -1,8 +1,19 @@
+import * as vscode from 'vscode';
 import type { EditorToHostMessage, HostToEditorMessage } from '../../shared/messages';
-import { listAnchors, listNotes, openWikilink, type PlusSession } from './wikiOpen';
-import { writeSelection } from './selectionFile';
+import { hasSessionFor, listAnchors, listNotes, openWikilink, previewWikilink, trackSession as trackWikiSession, type PlusSession } from './wikiOpen';
+import { forgetSelectionOf, writeSelection } from './selectionFile';
 
-export { trackSession, takePendingJump } from './wikiOpen';
+export { takePendingJump } from './wikiOpen';
+
+/** Registers an open editor; when the last one on a document closes, its selection stops going to Claude. */
+export function trackSession(session: PlusSession): vscode.Disposable {
+	const tracked = trackWikiSession(session);
+	return new vscode.Disposable(() => {
+		tracked.dispose();
+		const document = session.getDocument();
+		if (!hasSessionFor(document.uri)) void forgetSelectionOf(document);
+	});
+}
 
 /**
  * Host side of md-live-preview-plus for one editor session: the messages the
@@ -23,6 +34,11 @@ export function handlePlusMessage(
 		case 'plusListAnchors':
 			void listAnchors(session, message.target).then((anchors) =>
 				post({ type: 'plusAnchors', requestId: message.requestId, anchors }),
+			);
+			return true;
+		case 'plusPreview':
+			void previewWikilink(session, message.target).then((preview) =>
+				post({ type: 'plusPreviewResult', requestId: message.requestId, preview }),
 			);
 			return true;
 		case 'openLink':

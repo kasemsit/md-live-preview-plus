@@ -1,10 +1,11 @@
 import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
-import type { EditorState, Extension, Range } from '@codemirror/state';
+import { StateEffect, type EditorState, type Extension, type Range } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import { cursorTouchesRange, isBlockRevealed, blockRevealChanged } from '../cmUtils';
 import { findWikilinks } from './wikilinkSyntax';
 import { registerInlinePass } from './inlineExtras';
+import { isUnresolved, onNoteIndexChange, refreshNoteIndex } from './noteIndex';
 
 /**
  * Wikilinks in the document body: `[[target#anchor|label]]` shows only `label`
@@ -30,10 +31,17 @@ export function inSourceContext(state: EditorState, pos: number): boolean {
 
 const hidden = Decoration.replace({});
 
+/** The note list arrived or changed: unresolved-link styling has to be recomputed. */
+const noteIndexChanged = StateEffect.define<null>();
+
+function linkClass(target: string): string {
+	return isUnresolved(target) ? 'mlp-link mlp-wikilink mlp-wikilink-unresolved' : 'mlp-link mlp-wikilink';
+}
+
 function linkMark(target: string): Decoration {
 	return Decoration.mark({
 		tagName: 'a',
-		class: 'mlp-link mlp-wikilink',
+		class: linkClass(target),
 		attributes: { 'data-href': `wiki:${target}`, title: target },
 	});
 }
@@ -58,18 +66,35 @@ function build(view: EditorView): DecorationSet {
 const wikilinkDecorations = ViewPlugin.fromClass(
 	class {
 		decorations: DecorationSet;
-		constructor(view: EditorView) {
+		private readonly unsubscribe: () => void;
+		private readonly onFocus = () => void refreshNoteIndex();
+		constructor(private readonly view: EditorView) {
 			this.decorations = build(view);
+			this.unsubscribe = onNoteIndexChange(() => {
+				view.dispatch({ effects: noteIndexChanged.of(null) });
+				// Links that widgets rendered (table cells, footnote cards) are not
+				// decorations, so they are updated in place.
+				for (const a of Array.from(view.dom.querySelectorAll<HTMLElement>('.mlp-table-wrap .mlp-wikilink, .mlp-fn-pop .mlp-wikilink'))) {
+					a.classList.toggle('mlp-wikilink-unresolved', isUnresolved((a.dataset.href ?? '').replace(/^wiki:/, '')));
+				}
+			});
+			void refreshNoteIndex();
+			// A note created or renamed elsewhere shows up the next time the editor is used.
+			view.dom.addEventListener('focusin', this.onFocus);
 		}
 		update(update: ViewUpdate) {
 			if (
 				update.docChanged ||
 				update.viewportChanged ||
 				update.selectionSet ||
-				update.transactions.some((tr) => tr.effects.some((e) => e.is(blockRevealChanged)))
+				update.transactions.some((tr) => tr.effects.some((e) => e.is(blockRevealChanged) || e.is(noteIndexChanged)))
 			) {
 				this.decorations = build(update.view);
 			}
+		}
+		destroy() {
+			this.unsubscribe();
+			this.view.dom.removeEventListener('focusin', this.onFocus);
 		}
 	},
 	{ decorations: (v) => v.decorations },
@@ -110,12 +135,12 @@ export function wikilinkExtension(onOpen: (href: string) => void): Extension {
 // Table cells and footnote cards: the inline Markdown parser would read
 // `[[a|b]]` as bracket text and split nothing useful out of it, so links are
 // swapped for private-use placeholders before parsing and rebuilt afterwards.
-const PLACEHOLDER = /(\d+)/;
-const PLACEHOLDER_SPLIT = /(\d+)/;
+const PLACEHOLDER = /\uE000(\d+)\uE001/;
+const PLACEHOLDER_SPLIT = /(\uE000\d+\uE001)/;
 
 export function wikilinkElement(target: string, label: string): HTMLAnchorElement {
 	const a = document.createElement('a');
-	a.className = 'mlp-link mlp-wikilink';
+	a.className = linkClass(target);
 	a.setAttribute('data-href', `wiki:${target}`);
 	a.title = target;
 	a.textContent = label;
@@ -129,7 +154,7 @@ registerInlinePass((text) => {
 	let out = '';
 	let last = 0;
 	links.forEach((link, i) => {
-		out += `${text.slice(last, link.from)}${i}`;
+		out += `${text.slice(last, link.from)}\uE000${i}\uE001`;
 		last = link.to;
 	});
 	out += text.slice(last);
@@ -144,7 +169,7 @@ registerInlinePass((text) => {
 			for (const node of nodes) {
 				const frag = document.createDocumentFragment();
 				for (const part of (node.nodeValue ?? '').split(PLACEHOLDER_SPLIT)) {
-					const m = /^(\d+)$/.exec(part);
+					const m = /^\uE000(\d+)\uE001$/.exec(part);
 					if (m) frag.append(wikilinkElement(links[+m[1]].target, links[+m[1]].label));
 					else if (part) frag.append(part);
 				}

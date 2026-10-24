@@ -222,3 +222,89 @@ test.describe('completion', () => {
 		await expect(page.locator('.cm-content')).toContainText('[[#Second part]]');
 	});
 });
+
+test.describe('wikilink hover preview', () => {
+	test('shows the target block in a card, and its title opens the note', async ({ page }) => {
+		await mountEditor(page, '# T\n\nSee [[Laws/TH - PDPA#^ma-32|ม.32]] here.\n\nEnd.\n');
+		await page.locator('.cm-line .mlp-wikilink').hover();
+		await expect.poll(async () => (await posted(page)).some((m) => m.type === 'plusPreview')).toBe(true);
+		const req = (await posted(page)).filter((m) => m.type === 'plusPreview').at(-1)!;
+		expect(req.target).toBe('Laws/TH - PDPA#^ma-32');
+		await postToWebview(page, {
+			type: 'plusPreviewResult',
+			requestId: req.requestId,
+			preview: {
+				title: 'TH - PDPA › ^ma-32',
+				text: '### มาตรา 32 — สิทธิคัดค้าน\n\n> มาตรา ๓๒ เจ้าของข้อมูลมีสิทธิคัดค้าน\n> (๑) ข้อหนึ่ง\n\n| a | [[x|y]] |\n|---|---|\n| 1 | 2 |',
+				status: 'ok',
+				truncated: false,
+			},
+		});
+		const card = page.locator('.mlp-link-preview');
+		await expect(card).toBeVisible();
+		await expect(card.locator('.mlp-lp-h3')).toHaveText('มาตรา 32 — สิทธิคัดค้าน');
+		await expect(card.locator('.mlp-lp-quote')).toContainText('มาตรา ๓๒ เจ้าของข้อมูลมีสิทธิคัดค้าน');
+		await expect(card.locator('.mlp-lp-quote br')).toHaveCount(1);
+		await expect(card.locator('.mlp-lp-table th')).toHaveCount(2);
+		await card.locator('.mlp-lp-title').click();
+		expect((await posted(page)).filter((m) => m.type === 'openLink').at(-1)?.href).toBe('wiki:Laws/TH - PDPA#^ma-32');
+		await expect(card).toHaveCount(0);
+	});
+
+	test('the card closes when the pointer leaves', async ({ page }) => {
+		await mountEditor(page, '# T\n\nSee [[Other]] here.\n\nEnd.\n');
+		await page.locator('.cm-line .mlp-wikilink').hover();
+		await expect.poll(async () => (await posted(page)).some((m) => m.type === 'plusPreview')).toBe(true);
+		const req = (await posted(page)).filter((m) => m.type === 'plusPreview').at(-1)!;
+		await postToWebview(page, { type: 'plusPreviewResult', requestId: req.requestId, preview: { title: 'Other', text: 'Body.', status: 'ok', truncated: false } });
+		await expect(page.locator('.mlp-link-preview')).toBeVisible();
+		await page.mouse.move(990, 690);
+		await expect(page.locator('.mlp-link-preview')).toHaveCount(0);
+	});
+});
+
+test('links to notes that do not exist are marked', async ({ page }) => {
+	await mountEditor(page, '# T\n\n[[Exists]], [[Missing note]], [[Folder/Deep|deep]], [[pic.png]], [[#T]].\n\nEnd.\n');
+	await expect.poll(async () => (await posted(page)).some((m) => m.type === 'plusListNotes')).toBe(true);
+	const req = (await posted(page)).filter((m) => m.type === 'plusListNotes').at(-1)!;
+	await postToWebview(page, {
+		type: 'plusNotes',
+		requestId: req.requestId,
+		notes: [
+			{ name: 'Exists', path: 'Exists.md' },
+			{ name: 'Deep', path: 'A/Folder/Deep.md' },
+		],
+	});
+	await expect(page.locator('.mlp-wikilink-unresolved')).toHaveText(['Missing note']);
+});
+
+test.describe('foldable callouts', () => {
+	const DOC = '# T\n\n> [!faq]- Folded question\n> Hidden answer.\n\n> [!tip]+ Open tip\n> Visible body.\n\n> [!note]- Folded table\n> | a | b |\n> |---|---|\n> | c | d |\n\nEnd.\n';
+
+	test('[!type]- starts folded, [!type]+ starts open, the chevron toggles', async ({ page }) => {
+		await mountEditor(page, DOC);
+		const content = page.locator('.cm-content');
+		await expect(content).not.toContainText('Hidden answer.');
+		await expect(content).toContainText('Visible body.');
+		await expect(page.locator('.mlp-callout-fold')).toHaveCount(3);
+		await page.locator('.mlp-callout-fold').first().click();
+		await expect(content).toContainText('Hidden answer.');
+		await page.locator('.mlp-callout-fold').nth(1).click();
+		await expect(content).not.toContainText('Visible body.');
+	});
+
+	test('a folded callout holding a table opens to the rendered table', async ({ page }) => {
+		await mountEditor(page, DOC);
+		await expect(page.locator('.mlp-table-in-quote')).toHaveCount(0);
+		await page.locator('.mlp-callout-fold').nth(2).click();
+		await expect(page.locator('.mlp-table-in-quote tr')).toHaveCount(2);
+	});
+});
+
+test('HTML comments are tinted, on their own lines or inline', async ({ page }) => {
+	await mountEditor(page, '# T\n\n<!-- REVIEW one\ntwo -->\n\nText <!-- inline --> end.\n\nEnd.\n');
+	await expect(page.locator('.cm-line.mlp-comment-line')).toHaveCount(2);
+	await expect(page.locator('.cm-line.mlp-comment-line-first')).toContainText('REVIEW one');
+	await expect(page.locator('.mlp-comment')).toHaveText('<!-- inline -->');
+	await expect(page.locator('.mlp-comment-marker')).toHaveCount(4);
+});

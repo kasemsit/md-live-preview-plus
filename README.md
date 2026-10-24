@@ -12,18 +12,24 @@ This fork adds:
   - A click opens the note in Live Preview at the heading or block.
   - Notes are found by name anywhere in the workspace, as in Obsidian.
   - Links work in table cells, with `\|` or a bare `|` before the label.
+  - **Hover** over a link to read its target in a card: a heading's section, or a block. The title of the card opens the note.
+  - A link to a note that does not exist is shown faint.
 - **Completion**:
   - `[[` offers the notes in the workspace.
   - `[[note#` offers that note's headings, and `[[note#^` its block ids.
   - `[^` offers the existing footnotes, plus *new footnote*.
 - **Callouts**: `> [!note]`, `> [!warning] Title` and the other Obsidian types render as coloured cards with an icon.
+  - `> [!type]-` starts folded and `> [!type]+` starts open. The chevron after the title folds or opens either.
 - **Tables inside quotes and callouts** render as tables, even when the table follows a line of text directly.
 - **Footnotes**: `[^1]` renders as a superscript number numbered by first citation.
   - Hover over the number to read the note. Click it to jump to the definition, and click `↩` to jump back.
   - **Insert Footnote** (`Ctrl+Alt+6`, or `Cmd+Alt+6` on macOS) adds the next number at the cursor and its definition at the end of the file.
 - **Block ids** (`… ^ma-32`) are dimmed rather than shown at full strength.
+- **HTML comments** (`<!-- … -->`) are tinted as notes to the writer.
 - **Claude Code sees your selection**: the exact Markdown source, its line numbers and the file path. A webview's selection is otherwise invisible to VS Code and to Claude.
   - The file is saved when you select, so the line numbers match the file on disk.
+  - A status bar item shows what Claude will get with your next prompt. Click it to stop sending.
+  - A notice in Claude Code says what was sent.
 - **A readable selection highlight**: the selection band no longer hides the text.
 - **A Thai/English reading theme**: Sarabun is embedded, so no font needs installing.
 
@@ -75,7 +81,18 @@ The keybinding for **Insert Footnote** can be changed in *Keyboard Shortcuts*. S
 
 1. The webview posts the CodeMirror selection to the extension host.
 2. The host saves the file if it has unsaved changes, then writes `~/.claude/live-preview-selection.json`.
-3. On every prompt, the hook (`plus/hooks/`) prints that file as context. It does so only when the selection is non-empty and less than 30 minutes old.
+3. On every prompt, the hook (`plus/hooks/`) adds that selection to Claude's context and shows a one-line notice saying what it sent.
+
+What the hook sends:
+- **A new selection** is sent in full the first time a Claude session sees it.
+- **The same selection on later prompts** gets a one-line reminder of its file and lines, so the conversation does not grow with every prompt.
+- **A selection over 4,000 characters** is sent as its head and tail plus its line range, which Claude can read from the file.
+- **Nothing** when the selection is empty or more than 30 minutes old.
+
+The selection stops being sent when you:
+- clear it, or click the status bar item;
+- select text in an ordinary editor;
+- close the preview.
 
 The selection stays on your own machine. Claude receives it only when you send a prompt.
 
