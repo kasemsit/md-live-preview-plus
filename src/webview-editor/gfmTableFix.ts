@@ -1,7 +1,7 @@
 import { TaskList, Strikethrough, Autolink, type BlockContext, type Line, type LeafBlock, type MarkdownExtension } from '@lezer/markdown';
 import { PlusTable } from './plus/table';
 import { PlusMath } from './plus/mathSyntax';
-import { insideWikilink } from '../shared/plusWikilinks';
+import { insideTableAtom } from '../shared/plusWikilinks';
 
 const delimiterLine = /^\|?(\s*:?-+:?\s*\|)+(\s*:?-+:?\s*)?$/;
 
@@ -23,7 +23,7 @@ function countCells(text: string, start: number): number {
 	let cellStart = -1;
 	let escaped = false;
 	// plus: a "|" inside [[note|label]] is part of the link (see plus/table.ts).
-	const inLink = insideWikilink(text);
+	const inLink = insideTableAtom(text);
 	for (let i = start; i < text.length; i++) {
 		const ch = text.charCodeAt(i);
 		if (ch === 0x7c /* '|' */ && !escaped && !inLink(i)) {

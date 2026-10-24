@@ -1,6 +1,6 @@
 import { renderInlineInto } from '../tableCellInline';
 import { cellInlineHooks } from '../livePreviewPlugin';
-import { insideWikilink } from '../../shared/plusWikilinks';
+import { insideTableAtom } from '../../shared/plusWikilinks';
 
 /**
  * Markdown → HTML for pasting into Word, Google Docs or an e-mail ("Copy as
@@ -45,7 +45,7 @@ function inline(parent: HTMLElement, text: string): void {
 }
 
 function splitRow(row: string): string[] {
-	const inLink = insideWikilink(row);
+	const inLink = insideTableAtom(row);
 	const cells: string[] = [];
 	let cell = '';
 	let escaped = false;

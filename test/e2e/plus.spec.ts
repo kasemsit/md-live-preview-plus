@@ -661,3 +661,20 @@ test.describe('image embeds ![[…]]', () => {
 		await expect(page.locator('.cm-content')).toContainText('![[nope.png]]');
 	});
 });
+
+test.describe('tables with math, and brackets that are not links', () => {
+	test('a header with $|B_m|/n$ still makes a table, with math in the cell', async ({ page }) => {
+		await mountEditor(page, '# T\n\n| Bin | $|B_m|/n$ | c |\n|---|---|---|\n| 1 | 0.20 | x |\n\nEnd.\n');
+		await expect(page.locator('.mlp-table-wrap th')).toHaveCount(3);
+		await expect(page.locator('.mlp-table-wrap th .mlp-math .katex')).toHaveCount(1);
+	});
+
+	test('[0.8, 1.0] with no definition stays text; [ref] with one is a link', async ({ page }) => {
+		await mountEditor(page, '# T\n\nInterval [0.8, 1.0] and a [ref] link.\n\n| r |\n|---|\n| [0.8, 1.0] |\n\n[ref]: https://example.org\n');
+		const line = page.locator('.cm-line').filter({ hasText: 'Interval' });
+		await expect(line).toContainText('Interval [0.8, 1.0] and a ref link.');
+		await expect(line.locator('.mlp-link')).toHaveText(['ref']);
+		await expect(page.locator('.mlp-table-wrap td')).toHaveText('[0.8, 1.0]');
+		await expect(page.locator('.mlp-table-wrap td .mlp-link')).toHaveCount(0);
+	});
+});

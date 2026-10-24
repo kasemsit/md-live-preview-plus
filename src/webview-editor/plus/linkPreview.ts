@@ -4,7 +4,7 @@ import type { PlusPreview } from '../../shared/messages';
 import { renderInlineInto } from '../tableCellInline';
 import { cellInlineHooks } from '../livePreviewPlugin';
 import { previewLink } from './hostRequests';
-import { insideWikilink } from '../../shared/plusWikilinks';
+import { insideTableAtom } from '../../shared/plusWikilinks';
 import { calloutStyle } from './callouts';
 import { renderMathInto } from './math';
 
@@ -22,7 +22,7 @@ const CACHE_MS = 15_000;
 const inline = (el: HTMLElement, text: string) => renderInlineInto(el, text, cellInlineHooks);
 
 function splitRow(row: string): string[] {
-	const inLink = insideWikilink(row);
+	const inLink = insideTableAtom(row);
 	const cells: string[] = [];
 	let cell = '';
 	let escaped = false;

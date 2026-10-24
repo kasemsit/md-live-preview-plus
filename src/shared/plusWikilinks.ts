@@ -107,3 +107,51 @@ export function findCitations(text: string): CitationMatch[] {
 export function isCitationAt(text: string, offset: number): boolean {
 	return findCitations(text).some((c) => c.groupFrom === offset);
 }
+
+/**
+ * `[from, to]` (the two `$`) of each inline formula in `text`, by the same
+ * Pandoc rules the parser uses (webview-editor/plus/mathSyntax.ts): the
+ * opening `$` not followed by a space, the closing one not preceded by a space
+ * nor followed by a digit, and never `$$`.
+ */
+export function findInlineMath(text: string): [number, number][] {
+	const out: [number, number][] = [];
+	for (let i = 0; i < text.length; i++) {
+		const ch = text[i];
+		if (ch === '\\') {
+			i++;
+			continue;
+		}
+		if (ch !== '$') continue;
+		if (text[i + 1] === '$') {
+			i++;
+			continue;
+		}
+		if (i + 1 >= text.length || /\s/.test(text[i + 1])) continue;
+		for (let j = i + 1; j < text.length; j++) {
+			const c = text[j];
+			if (c === '\\') {
+				j++;
+				continue;
+			}
+			if (c === '\n' || (c === '$' && text[j + 1] === '$')) break;
+			if (c !== '$' || /\s/.test(text[j - 1]) || /\d/.test(text[j + 1] ?? '')) continue;
+			out.push([i, j]);
+			i = j;
+			break;
+		}
+	}
+	return out;
+}
+
+/**
+ * A predicate saying whether a `|` at offset `i` is part of a wikilink or a
+ * formula rather than a table-cell boundary — `[[note|label]]` and `$|x|$`
+ * read as one cell each, as Obsidian shows them.
+ */
+export function insideTableAtom(text: string): (i: number) => boolean {
+	const inLink = insideWikilink(text);
+	const math = text.includes('$') ? findInlineMath(text) : [];
+	if (!math.length) return inLink;
+	return (i) => inLink(i) || math.some(([a, b]) => i > a && i < b);
+}

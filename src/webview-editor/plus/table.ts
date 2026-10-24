@@ -1,15 +1,15 @@
 import { tags } from '@lezer/highlight';
 import type { BlockContext, Element, LeafBlock, Line, MarkdownConfig } from '@lezer/markdown';
-import { insideWikilink } from '../../shared/plusWikilinks';
+import { insideTableAtom } from '../../shared/plusWikilinks';
 
 /*
  * GFM tables — a copy of @lezer/markdown's `Table` extension (MIT, Marijn
  * Haverbeke and others; 1.6.4), changed in two places:
  *
- * 1. A `|` inside `[[...]]` is not a cell boundary. Obsidian reads
- *    `| [[note|label]] |` as one cell; stock GFM reads two, so a header row
- *    holding such a link no longer matched its delimiter row and the whole
- *    table stayed plain text.
+ * 1. A `|` inside `[[...]]` or inside inline math `$...$` is not a cell
+ *    boundary. Obsidian reads `| [[note|label]] |` and `| $|x|$ |` as one cell
+ *    each; stock GFM reads several, so a header row holding either no longer
+ *    matched its delimiter row and the whole table stayed plain text.
  * 2. A table may interrupt a paragraph inside a blockquote. The stock hook
  *    tests the *next* line against the delimiter regex as raw text, `>` markers
  *    included, so `> text\n> | a |\n> |---|` never became a table.
@@ -25,7 +25,7 @@ function parseRow(cx: BlockContext, line: string, startI = 0, elts?: Element[], 
 	let cellStart = -1;
 	let cellEnd = -1;
 	let esc = false;
-	const inLink = insideWikilink(line);
+	const inLink = insideTableAtom(line);
 	const parseCell = () => {
 		elts!.push(
 			cx.elt(

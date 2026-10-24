@@ -4,6 +4,7 @@ import { withInlinePasses } from './plus/inlineExtras';
 import { isCitationAt } from '../shared/plusWikilinks';
 import { PlusMath } from './plus/mathSyntax';
 import { renderMathInto } from './plus/math';
+import { isShortcutLink } from './plus/references';
 
 // A table cell's content is plain text as far as CodeMirror is concerned — the
 // rich TableWidget builds its own DOM outside the editor, so the live-preview
@@ -128,8 +129,10 @@ function renderNode(parent: HTMLElement, node: SyntaxNode, src: string, hooks: C
 		}
 		case 'Link': {
 			// plus: "[^1]" is a footnote reference (plus/footnotes.ts) and "[@key]"
-			// a citation (plus/citations.ts); both are rendered from the text.
-			if (src.slice(node.from, node.from + 2) === '[^' || isCitationAt(src, node.from)) {
+			// a citation (plus/citations.ts); both are rendered from the text. A
+			// bare "[text]" is a link only with a "[text]: url" definition, which a
+			// cell cannot see — so it stays text (plus/references.ts).
+			if (src.slice(node.from, node.from + 2) === '[^' || isCitationAt(src, node.from) || isShortcutLink(node)) {
 				appendText(parent, src.slice(node.from, node.to));
 				return;
 			}

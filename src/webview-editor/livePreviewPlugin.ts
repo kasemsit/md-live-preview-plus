@@ -12,8 +12,9 @@ import { renderInlineInto, type CellInlineHooks } from './tableCellInline';
 import { createCodeModeButton, createCopyCodeButton, createRenderModeButton } from './codeModeButton';
 import { insertRow, insertColumn, renderTableMarkdown, type TableEditModel } from './tableEdit';
 import { t } from '../shared/i18n';
-import { insideWikilink, isCitationAt } from '../shared/plusWikilinks';
+import { insideTableAtom, insideWikilink, isCitationAt } from '../shared/plusWikilinks';
 import { mathBlockReplaced } from './plus/mathSyntax';
+import { isUndefinedReferenceLink } from './plus/references';
 
 const HEADING_LINE_CLASS: Record<string, string> = {
 	ATXHeading1: 'mlp-line-h1',
@@ -1157,8 +1158,8 @@ export function readCellSpans(state: EditorState, rowNode: SyntaxNode): CellSpan
 	let cellStart = 0;
 	let escaped = false;
 	let index = 0;
-	// plus: a "|" inside [[note|label]] belongs to the link (see plus/table.ts).
-	const inLink = insideWikilink(text);
+	// plus: a "|" inside [[note|label]] or $|x|$ is not a cell boundary (see plus/table.ts).
+	const inLink = insideTableAtom(text);
 	for (const ch of text) {
 		if (ch === '|' && !escaped && !inLink(index)) {
 			segments.push({ raw: cell, offset: cellStart });
@@ -1692,6 +1693,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 						const linkLine = doc.lineAt(node.from);
 						if (insideWikilink(linkLine.text)(node.from - linkLine.from)) return false;
 						if (isCitationAt(linkLine.text, node.from - linkLine.from)) return false;
+						// plus: "[text]" with no "[text]: url" definition is plain text (CommonMark).
+						if (isUndefinedReferenceLink(state, node.node)) return false;
 						const marks = node.node.getChildren('LinkMark');
 						if (marks.length < 2) return;
 						const labelFrom = marks[0].to;

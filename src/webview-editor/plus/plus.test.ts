@@ -5,7 +5,7 @@ import { ensureSyntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import { GFM } from '../gfmTableFix';
 import { alignedBlockRange, readCellSpans } from '../livePreviewPlugin';
-import { findCitations, findWikilinks, insideWikilink, splitTarget } from '../../shared/plusWikilinks';
+import { findCitations, findInlineMath, findWikilinks, insideWikilink, splitTarget } from '../../shared/plusWikilinks';
 import { cleanLine, extractLinks, keysForNote } from '../../shared/plusBacklinks';
 import { quotePrefixLength } from './table';
 import { scanFootnotes, nextFootnoteLabel } from './footnotes';
@@ -349,5 +349,26 @@ describe('underline toggle', () => {
 		expect(computeWrapToggle('word', 'a ', ' b', 2, 6, '<u>', '</u>').insert).toBe('<u>word</u>');
 		expect(computeWrapToggle('word', '<u>', '</u>', 5, 9, '<u>', '</u>')).toMatchObject({ from: 2, to: 13, insert: 'word' });
 		expect(computeWrapToggle('<u>word</u>', '', '', 0, 11, '<u>', '</u>').insert).toBe('word');
+	});
+});
+
+describe('pipes inside math in tables', () => {
+	it('finds inline math by the parser\'s rules', () => {
+		const spans = (t: string) => findInlineMath(t).map(([a, b]) => t.slice(a, b + 1));
+		expect(spans('| $|B_m|/n$ | x |')).toEqual(['$|B_m|/n$']);
+		expect(spans('| $5 | $10 |')).toEqual([]);
+		expect(spans('$$x$$ and $y$')).toEqual(['$y$']);
+	});
+
+	it('keeps a header holding $|x|$ as one cell, so the table is a table', () => {
+		const { state, tables } = parse('| Bin | $|B_m|/n$ | c |\n|---|---|---|\n| 1 | 0.2 | x |\n');
+		expect(tables).toHaveLength(1);
+		const header = tables[0].getChild('TableHeader')!;
+		expect(readCellSpans(state, header).map((c) => c.text)).toEqual(['Bin', '$|B_m|/n$', 'c']);
+	});
+
+	it('still splits money in cells normally', () => {
+		const { state, tables } = parse('| a | b |\n|---|---|\n| $5 | $10 |\n');
+		expect(readCellSpans(state, tables[0].getChild('TableRow')!).map((c) => c.text)).toEqual(['$5', '$10']);
 	});
 });
