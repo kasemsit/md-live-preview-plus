@@ -7,6 +7,7 @@ import { isPathInside } from '../shared/pathContainment';
 import { handlePlusMessage, trackSession, takePendingJump } from './plus';
 import { textScale } from './plus/textScale';
 import { isTrackedChange } from './plus/trackChanges';
+import { changesForEditor, eolMap, tokensForEditor } from './plus/eol';
 
 /**
  * Largest `.drawio` file that will be read and parsed.
@@ -243,7 +244,8 @@ export class DocumentSyncSession {
 		// blank line separates the image into its own paragraph instead of
 		// running it straight onto the table's last line.
 		const insertText = needsOwnParagraph ? `\n\n![](assets/${fileName})` : `![](assets/${fileName})`;
-		const position = this.document.positionAt(atPos);
+		// plus: `atPos` is a CodeMirror offset; in a CRLF file it differs (plus/eol.ts).
+		const position = eolMap(this.document).position(atPos);
 		const edit = new vscode.WorkspaceEdit();
 		edit.insert(this.document.uri, position, insertText);
 		await vscode.workspace.applyEdit(edit);
@@ -284,12 +286,11 @@ export class DocumentSyncSession {
 		}
 
 		const edit = new vscode.WorkspaceEdit();
+		// plus: the webview's offsets count a line break as one character; in a
+		// CRLF file VS Code counts two, so they are converted (plus/eol.ts).
+		const map = eolMap(this.document);
 		for (const change of changes) {
-			edit.replace(
-				this.document.uri,
-				new vscode.Range(this.document.positionAt(change.from), this.document.positionAt(change.to)),
-				change.insert,
-			);
+			edit.replace(this.document.uri, new vscode.Range(map.position(change.from), map.position(change.to)), change.insert);
 		}
 
 		this.applyingLocalEdit = true;
@@ -321,11 +322,8 @@ export class DocumentSyncSession {
 			return;
 		}
 
-		const changes: TextChange[] = event.contentChanges.map((c) => ({
-			from: c.rangeOffset,
-			to: c.rangeOffset + c.rangeLength,
-			insert: c.text,
-		}));
+		// plus: converted to the webview's offsets for a CRLF file (plus/eol.ts).
+		const changes: TextChange[] = changesForEditor(event);
 		// md-live-preview-plus: a reload from disk is shown as tracked changes.
 		if (isTrackedChange(event)) this.post({ type: 'plusTrackNext' });
 		this.post({ type: 'externalUpdate', changes, version: event.document.version });
@@ -340,7 +338,7 @@ export class DocumentSyncSession {
 		const run = () => {
 			this.rehighlightTimer = undefined;
 			void tokenizeDocument(this.document).then((blocks) => {
-				this.post({ type: 'codeTokens', blocks });
+				this.post({ type: 'codeTokens', blocks: tokensForEditor(this.document, blocks) });
 			});
 		};
 		if (immediate) {

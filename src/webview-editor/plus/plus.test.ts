@@ -411,3 +411,29 @@ describe('word diff for tracked changes', () => {
 		expect(hunks[0].deleted).toBe('old words');
 	});
 });
+
+describe('CRLF offsets', () => {
+	it('converts between VS Code and CodeMirror offsets in a CRLF text', async () => {
+		const { crlfPositions, vsToCm, cmToVs } = await import('../../shared/plusEol');
+		const vsText = 'ab\r\ncd\r\nef';
+		const cmText = 'ab\ncd\nef';
+		const crs = crlfPositions(vsText);
+		expect(crs).toEqual([2, 6]);
+		for (const ch of ['a', 'c', 'd', 'e', 'f']) {
+			const vs = vsText.indexOf(ch);
+			const cm = cmText.indexOf(ch);
+			expect(vsToCm(crs, vs)).toBe(cm);
+			expect(cmToVs(crs, cm)).toBe(vs);
+		}
+		// Line ends map to the \r, line starts to after the \n.
+		expect(cmToVs(crs, 2)).toBe(2);
+		expect(cmToVs(crs, 3)).toBe(4);
+	});
+
+	it('is the identity in an LF text', async () => {
+		const { crlfPositions, vsToCm, cmToVs } = await import('../../shared/plusEol');
+		const crs = crlfPositions('ab\ncd');
+		expect(vsToCm(crs, 4)).toBe(4);
+		expect(cmToVs(crs, 4)).toBe(4);
+	});
+});

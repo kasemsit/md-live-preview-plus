@@ -2,6 +2,19 @@
 
 Each `## <version>` section is used as the GitHub release notes by `plus/release.sh`.
 
+## 0.4.11
+
+**Fixes a bug that put edits in the wrong place in files with Windows line endings (CRLF).** Please update.
+
+- **The bug was in the upstream editor.** In a CRLF file, every edit made in the preview landed one character further off for each line above it: typing, Renumber Footnotes, table edits and the rest. Changes arriving from disk were placed off the other way. Files with LF line endings were never affected.
+  - **Symptom:** numbers or text appearing in the middle of sentences, worse further down the file.
+  - **To repair a damaged file:** press Ctrl+Z in the preview if it is still open, or restore the previous version from the Timeline view (VS Code's local history).
+- **Renumber Footnotes**:
+  - it now also renumbers footnotes inside a table shown as source;
+  - it parses the whole file first, so text in a code block far below stays untouched;
+  - it stops, with a message, when a reference without a definition would be captured by a renumbered footnote.
+- Code highlighting in fenced blocks was offset in CRLF files too; fixed.
+
 ## 0.4.10
 
 - **Tracked changes from outside the editor.** When an open note changes on disk (Claude writing it, a git checkout, another program), the Live Preview shows what changed on the rendered page.

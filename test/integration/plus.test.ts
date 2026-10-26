@@ -150,3 +150,58 @@ suite('md-live-preview-plus tracked changes', () => {
 		await document.save();
 	});
 });
+
+suite('md-live-preview-plus CRLF files', () => {
+	let file: vscode.Uri;
+	setup(async () => {
+		const folder = vscode.workspace.workspaceFolders![0];
+		file = vscode.Uri.joinPath(folder.uri, `crlf-${Date.now()}.md`);
+	});
+	teardown(async () => {
+		await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+		try {
+			await vscode.workspace.fs.delete(file);
+		} catch {
+			// gone
+		}
+	});
+
+	async function until<T>(read: () => T, ok: (v: T) => boolean, ms = 5000): Promise<T> {
+		const end = Date.now() + ms;
+		let v = read();
+		while (!ok(v) && Date.now() < end) {
+			await new Promise((r) => setTimeout(r, 100));
+			v = read();
+		}
+		return v;
+	}
+
+	test('an edit made in the preview lands in the right place in a CRLF file', async () => {
+		const lines = ['# T', '', 'Line one with A[^9].', 'Line two.', 'Line three with B[^4].', '', '[^4]: Four.', '[^9]: Nine.', ''];
+		await vscode.workspace.fs.writeFile(file, new TextEncoder().encode(lines.join('\r\n')));
+		await vscode.commands.executeCommand('vscode.openWith', file, 'mdLivePreview.editor');
+		await new Promise((r) => setTimeout(r, 2500));
+		const document = await vscode.workspace.openTextDocument(file);
+		assert.strictEqual(document.eol, vscode.EndOfLine.CRLF);
+		await vscode.commands.executeCommand('mdLivePreview.plus.renumberFootnotes');
+		const text = await until(() => document.getText(), (t) => t.includes('A[^1]'));
+		const expected = ['# T', '', 'Line one with A[^1].', 'Line two.', 'Line three with B[^2].', '', '[^2]: Four.', '[^1]: Nine.', ''].join('\r\n');
+		assert.strictEqual(text, expected);
+	});
+
+	test('a change from disk reaches the preview at the right place in a CRLF file', async () => {
+		const before = ['# T', '', 'Alpha.', 'Beta[^8].', '', '[^8]: Eight.', ''].join('\r\n');
+		await vscode.workspace.fs.writeFile(file, new TextEncoder().encode(before));
+		await vscode.commands.executeCommand('vscode.openWith', file, 'mdLivePreview.editor');
+		await new Promise((r) => setTimeout(r, 2500));
+		const document = await vscode.workspace.openTextDocument(file);
+		// Changed on disk below line 1, so the preview must place it by CRLF-aware offsets…
+		await vscode.workspace.fs.writeFile(file, new TextEncoder().encode(before.replace('Alpha.', 'Alpha changed.')));
+		await until(() => document.getText(), (t) => t.includes('Alpha changed.'));
+		await new Promise((r) => setTimeout(r, 500));
+		// …which the next preview edit then proves: it lands where it should.
+		await vscode.commands.executeCommand('mdLivePreview.plus.renumberFootnotes');
+		const text = await until(() => document.getText(), (t) => t.includes('Beta[^1]'));
+		assert.strictEqual(text, ['# T', '', 'Alpha changed.', 'Beta[^1].', '', '[^1]: Eight.', ''].join('\r\n'));
+	});
+});

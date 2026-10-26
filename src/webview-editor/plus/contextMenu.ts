@@ -1,13 +1,12 @@
 import { type EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import type { EditorState } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
-import type { SyntaxNode } from '@lezer/common';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
+import type { SyntaxNode, Tree } from '@lezer/common';
 import type { PlusCommand, PlusEditorToHostMessage } from '../../shared/messages';
 import { readTableModel, caretPastTable, cellInlineHooks } from '../livePreviewPlugin';
 import { insertRow, insertColumn, deleteRow, deleteColumn, renderTableMarkdown, type TableEditModel } from '../tableEdit';
 import { renderInlineInto } from '../tableCellInline';
 import { scanFootnotes } from './footnotes';
-import { inSourceContext } from './wikilinks';
 import { markdownToHtml, htmlToText } from './richText';
 
 /**
@@ -182,23 +181,44 @@ async function copyRichText(view: EditorView, range?: { from: number; to: number
  * place; Pandoc and Obsidian number by citation order anyway, and this makes
  * the source agree with what is displayed.
  */
+const CODE_NODES = /^(FencedCode|CodeBlock|InlineCode|HTMLBlock|CommentBlock|InlineMath|BlockMath)$/;
+
+/** Inside code, raw HTML, a comment or math — never inside a table, rendered or not. */
+function inCode(tree: Tree, pos: number): boolean {
+	for (let n: SyntaxNode | null = tree.resolveInner(pos, 1); n; n = n.parent) if (CODE_NODES.test(n.name)) return true;
+	return false;
+}
+
 function renumberFootnotes(view: EditorView): void {
 	const { state } = view;
 	const scan = scanFootnotes(state.doc);
 	if (!scan.defs.size) return notify('This document has no footnotes.', true);
 	const rename = new Map([...scan.order.entries()].map(([label, n]) => [label, String(n)]));
 	if ([...rename].every(([a, b]) => a === b)) return notify('Footnotes are already numbered in order.');
-	const changes: { from: number; to: number; insert: string }[] = [];
+	// The whole document parsed, or a code block below the viewport would not yet be known as code.
+	const tree = ensureSyntaxTree(state, state.doc.length, 3000) ?? syntaxTree(state);
+	const found: { from: number; label: string }[] = [];
 	for (let n = 1; n <= state.doc.lines; n++) {
 		const line = state.doc.line(n);
 		if (!line.text.includes('[^')) continue;
 		for (const m of line.text.matchAll(/\[\^([^\]\s]+)\]/g)) {
-			const to = rename.get(m[1]);
 			const from = line.from + m.index! + 2;
-			if (!to || to === m[1] || inSourceContext(state, from)) continue;
-			changes.push({ from, to: from + m[1].length, insert: to });
+			if (!inCode(tree, from)) found.push({ from, label: m[1] });
 		}
 	}
+	// A reference with no definition keeps its label, so a footnote renumbered
+	// onto that label would silently become its definition.
+	const targets = new Set(rename.values());
+	const stray = [...new Set(found.filter((f) => !rename.has(f.label) && targets.has(f.label)).map((f) => f.label))];
+	if (stray.length) {
+		return notify(
+			`Not renumbered: ${stray.map((l) => `[^${l}]`).join(', ')} has no definition, and a renumbered footnote would take its number. Define or remove it first.`,
+			true,
+		);
+	}
+	const changes = found
+		.filter((f) => rename.has(f.label) && rename.get(f.label) !== f.label)
+		.map((f) => ({ from: f.from, to: f.from + f.label.length, insert: rename.get(f.label)! }));
 	view.dispatch({ changes });
 	notify(`Renumbered ${rename.size} footnotes in citation order.`);
 }

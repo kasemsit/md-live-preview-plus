@@ -780,3 +780,29 @@ test.describe('tracked changes from outside the editor', () => {
 		await expect(page.locator('.mlp-table-wrap')).toHaveCount(0);
 	});
 });
+
+test.describe('renumber footnotes, edge cases', () => {
+	test('labels in a table shown as source are renumbered too', async ({ page }) => {
+		const DOC = '# T\n\nA[^7] b.\n\n| a |\n|---|\n| x[^3] |\n\n[^3]: Three.\n[^7]: Seven.\n';
+		await mountEditor(page, DOC);
+		await page.locator('.mlp-table-wrap .mlp-code-mode-btn').click();
+		await run(page, 'renumberFootnotes');
+		expect(await docText(page, DOC)).toBe('# T\n\nA[^1] b.\n\n| a |\n|---|\n| x[^2] |\n\n[^2]: Three.\n[^1]: Seven.\n');
+	});
+
+	test('a reference without a definition that a new number would capture stops it', async ({ page }) => {
+		const DOC = '# T\n\nA[^5] b[^1] c[^2].\n\n[^5]: Five.\n[^2]: Two.\n';
+		await mountEditor(page, DOC);
+		await run(page, 'renumberFootnotes');
+		await expect.poll(() => lastDo(page)).toMatchObject({ action: 'notify', error: true });
+		expect(String((await lastDo(page))!.message)).toContain('[^1]');
+		expect(await docText(page, DOC)).toBe(DOC);
+	});
+
+	test('code blocks keep their [^x] text', async ({ page }) => {
+		const DOC = '# T\n\nA[^9].\n\n```\nliteral [^9]\n```\n\n[^9]: Nine.\n';
+		await mountEditor(page, DOC);
+		await run(page, 'renumberFootnotes');
+		expect(await docText(page, DOC)).toBe('# T\n\nA[^1].\n\n```\nliteral [^9]\n```\n\n[^1]: Nine.\n');
+	});
+});
